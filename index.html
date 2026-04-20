@@ -459,7 +459,7 @@ function ConsentRow() {
 // Gift illustrations
 // ─────────────────────────────────────────────────────────────
 
-function GiftIllustration({ type, name = '' }) {
+function GiftIllustration({ type, name = '', compact = false }) {
   // ── IMAGE PATHS ──────────────────────────────────────────────
   // Save your images into an `images/` folder in the same repo:
   //   images/tumbler.webp  ← Coffee Tumbler
@@ -508,7 +508,7 @@ function GiftIllustration({ type, name = '' }) {
       <img
         src={imgs[type]}
         alt={type}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+        style={{ width: '100%', height: '100%', objectFit: compact ? 'cover' : 'contain', display: 'block' }}
       />
       {engravingOverlay}
       {barOverlay}
@@ -691,7 +691,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
     >
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={{ width: 120, height: 100, flexShrink: 0, background: 'var(--surface-2)' }}>
-          <GiftIllustration type={gift.id} />
+          <GiftIllustration type={gift.id} compact />
         </div>
         <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
@@ -781,7 +781,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, 
         background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
         marginBottom: 22, position: 'relative', overflow: 'hidden',
       }}>
-        <GiftIllustration type={gift.id} name={personalisation || gift.samplePlaceholder} />
+        <GiftIllustration type={gift.id} name={isSticker ? '' : (personalisation || gift.samplePlaceholder)} />
         <div style={{
           position: 'absolute', top: 12, left: 14,
           fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
