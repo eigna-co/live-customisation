@@ -683,8 +683,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
       style={{
         width: '100%', textAlign: 'left', padding: 0, border: 'none', cursor: out ? 'not-allowed' : 'pointer',
         background: 'var(--surface)', borderRadius: 18, overflow: 'hidden',
-        boxShadow: selected ? 'inset 0 0 0 2px var(--accent)' : 'inset 0 0 0 1px var(--line)',
-        transition: 'box-shadow .15s',
+        position: 'relative',
         marginBottom: 12, opacity: out ? 0.4 : 1, display: 'block',
       }}
     >
@@ -713,6 +712,12 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
           )}
         </div>
       </div>
+      {/* Border overlay — renders above image */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 18, pointerEvents: 'none',
+        boxShadow: selected ? 'inset 0 0 0 2px var(--accent)' : 'inset 0 0 0 1px var(--line)',
+        transition: 'box-shadow .15s',
+      }} />
     </button>
   );
 }
