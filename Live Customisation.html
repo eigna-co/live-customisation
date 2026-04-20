@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CC × WW Press Conference · Live Customisation · Axxel Marketing</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    --display: 'Space Grotesk', system-ui, sans-serif;
+    --body: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --accent: #d4ff3a;
+  }
+
+  /* style presets */
+  .style-neon {
+    --bg: #0a0a0a; --surface: #141414; --surface-2: #1a1a1a;
+    --fg: #f5f5f0; --fg-dim: #7a7a70; --line: rgba(245,245,240,0.1);
+  }
+  .style-acid {
+    --bg: #070a04; --surface: #0f1408; --surface-2: #151b0e;
+    --fg: #eaffcf; --fg-dim: #7a8568; --line: rgba(212,255,58,0.14);
+  }
+  .style-cream {
+    --bg: #f5f2ec; --surface: #fffdf8; --surface-2: #ebe6dd;
+    --fg: #1a1a1a; --fg-dim: #6a6a60; --line: rgba(26,26,26,0.12);
+  }
+  .style-mono {
+    --bg: #fafaf7; --surface: #ffffff; --surface-2: #f0f0ec;
+    --fg: #0a0a0a; --fg-dim: #666; --line: rgba(10,10,10,0.15);
+  }
+
+  html, body {
+    margin: 0; padding: 0; min-height: 100vh;
+    font-family: var(--body);
+    background: #0d0d0d;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  /* App renders as position:fixed overlay — stage and scale-wrap are decorative only */
+  .marginalia { display: none; }
+
+  #stage {
+    min-height: 100vh; height: 100vh; width: 100vw;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(212,255,58,0.05), transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(212,255,58,0.03), transparent 50%),
+      #0d0d0d;
+  }
+
+  #scale-wrap {
+    transform-origin: center center;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 64px 64px;
+    pointer-events: none;
+  }
+
+  .marginalia {
+    position: absolute; font-family: var(--mono);
+    font-size: 10px; letter-spacing: 1.4px;
+    color: rgba(255,255,255,0.22); text-transform: uppercase;
+    pointer-events: none; z-index: 1;
+  }
+  .m-top-left  { top: 24px; left: 24px; }
+  .m-top-right { top: 24px; right: 24px; text-align: right; }
+  .m-bottom-left  { bottom: 24px; left: 24px; }
+  .m-bottom-right { bottom: 24px; right: 24px; text-align: right; }
+  .m-bottom-left .big, .m-top-right .big {
+    display: block; color: rgba(255,255,255,0.4);
+    font-size: 11px; margin-top: 3px;
+  }
+
+  @keyframes banner-in {
+    from { transform: translateY(-30px) scale(0.94); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .screen { animation: fade-in .35s ease; height: 100%; }
+
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+  <div id="scale-wrap"><div id="root"></div></div>
+</div>
+
+<script>
+  window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "style": "cream",
+    "accent": "#ff4d2e",
+    "showInventory": true,
+    "eventName": "AN AXXEL LIVE EXPERIENCE",
+    "venue": "AXXEL",
+    "lowStock": 20
+  }/*EDITMODE-END*/;
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo, Fragment } = React;
+
+// ─────────────────────────────────────────────────────────────
+// Config — edit SMS_TEMPLATE to customise the message guests receive
+// ─────────────────────────────────────────────────────────────
+const CONFIG = {
+  AIRTABLE_TOKEN: 'patObIgMnWOqSEXpK.594dfa33a66ddeac4652f4884c4a73988cfb22191b2584f84e98361cec790254',
+  AIRTABLE_BASE:  'appdvB1aUSC8Q0Z2T',
+  AIRTABLE_TABLE: 'tblj0ReKCFJmEf9x3',
+  SMS_TEMPLATE: (firstName, gift, decoration, ticket) =>
+    `Hey ${firstName} — your ${gift} with "${decoration}" is ready at the booth. Show ticket ${ticket} within 30 min.`,
+  STAFF_PASSWORD: 'staff123',
+  CONTACT_FORM_URL: 'https://airtable.com/appdvB1aUSC8Q0Z2T/pagDaSkn5Er5Lcuuq/form',
+};
+
+async function checkEmailExists(email) {
+  const formula = encodeURIComponent(`{Email}="${email}"`);
+  const res = await fetch(
+    `https://api.airtable.com/v0/${CONFIG.AIRTABLE_BASE}/${CONFIG.AIRTABLE_TABLE}?filterByFormula=${formula}`,
+    { headers: { Authorization: `Bearer ${CONFIG.AIRTABLE_TOKEN}` } }
+  );
+  const json = await res.json();
+  return (json.records?.length ?? 0) > 0;
+}
+
+async function submitToAirtable(fields) {
+  const res = await fetch(
+    `https://api.airtable.com/v0/${CONFIG.AIRTABLE_BASE}/${CONFIG.AIRTABLE_TABLE}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${CONFIG.AIRTABLE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fields }),
+    }
+  );
+  if (!res.ok) throw new Error('Submission failed');
+}
+
+// ─────────────────────────────────────────────────────────────
+// iOS Frame components
+// ─────────────────────────────────────────────────────────────
+
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{ fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590, fontSize: 17, lineHeight: '22px', color: c }}>
+          {time}
+        </span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function IOSDevice({ children, width = 402, height = 874, dark = false }) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+      </div>
+      {/* home indicator */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Notification Banner
+// ─────────────────────────────────────────────────────────────
+
+function NotificationBanner({ notif, onDismiss }) {
+  if (!notif) return null;
+  const isEmail = notif.channel === 'email';
+  return (
+    <div style={{
+      position: 'absolute', top: 12, left: 10, right: 10, zIndex: 100,
+      background: 'rgba(28,28,30,0.88)',
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      borderRadius: 22, padding: '12px 14px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+      border: '0.5px solid rgba(255,255,255,0.12)',
+      display: 'flex', gap: 10, alignItems: 'flex-start',
+      animation: 'banner-in .45s cubic-bezier(.2,.7,.3,1.2)',
+    }} onClick={onDismiss}>
+      <div style={{
+        width: 38, height: 38, borderRadius: 9,
+        background: isEmail ? '#0a84ff' : '#34c759',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {isEmail ? (
+          <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
+            <rect x="1" y="1" width="18" height="14" rx="2" stroke="#fff" strokeWidth="1.6"/>
+            <path d="M1 3l9 6 9-6" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 4a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H8l-4 3v-3H5a2 2 0 01-2-2V4z" fill="#fff"/>
+          </svg>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
+          <div style={{ fontFamily: '-apple-system, system-ui', fontSize: 13, fontWeight: 600, color: '#fff', letterSpacing: -0.08 }}>
+            {isEmail ? 'Mail' : 'Messages'}
+          </div>
+          <div style={{ fontFamily: '-apple-system, system-ui', fontSize: 12, color: 'rgba(235,235,245,0.6)' }}>now</div>
+        </div>
+        <div style={{ fontFamily: '-apple-system, system-ui', fontSize: 14, fontWeight: 600, color: '#fff', letterSpacing: -0.15, marginBottom: 2 }}>
+          {notif.title}
+        </div>
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 14, lineHeight: 1.3,
+          color: 'rgba(235,235,245,0.85)', letterSpacing: -0.15,
+          overflow: 'hidden', display: '-webkit-box',
+          WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+        }}>{notif.body}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared screen primitives
+// ─────────────────────────────────────────────────────────────
+
+function Tag({ children, style = {} }) {
+  return (
+    <span style={{
+      fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.4,
+      textTransform: 'uppercase', color: 'var(--accent)',
+      padding: '5px 8px', border: '1px solid var(--accent)',
+      borderRadius: 3, ...style,
+    }}>{children}</span>
+  );
+}
+
+function Btn({ children, onClick, disabled, variant = 'primary', style = {} }) {
+  const base = {
+    width: '100%', height: 54, borderRadius: 999, border: 'none',
+    fontFamily: 'var(--display)', fontWeight: 600, fontSize: 15,
+    letterSpacing: 0.6, textTransform: 'uppercase',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'transform .12s ease, opacity .12s ease',
+    opacity: disabled ? 0.4 : 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+  };
+  const variants = {
+    primary: { background: 'var(--accent)', color: '#0a0a0a' },
+    ghost:   { background: 'transparent', color: 'var(--fg)', border: '1px solid var(--line)' },
+    dark:    { background: 'var(--fg)', color: 'var(--bg)' },
+  };
+  return (
+    <button disabled={disabled} onClick={onClick}
+      onMouseDown={e => !disabled && (e.currentTarget.style.transform = 'scale(0.98)')}
+      onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+      style={{ ...base, ...variants[variant], ...style }}>
+      {children}
+    </button>
+  );
+}
+
+function Field({ label, value, onChange, placeholder, type = 'text', hint, hintError, optional, maxLength, rightAdornment }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <label style={{
+          fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.5,
+          textTransform: 'uppercase', color: 'var(--fg-dim)',
+        }}>
+          {label} {optional && <span style={{ opacity: 0.55 }}>— optional</span>}
+        </label>
+        {maxLength && (
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-dim)' }}>
+            {value.length}/{maxLength}
+          </span>
+        )}
+      </div>
+      <div style={{
+        position: 'relative',
+        borderBottom: `1px solid ${focused ? 'var(--accent)' : 'var(--line)'}`,
+        transition: 'border-color .2s',
+      }}>
+        <input
+          type={type} value={value} onChange={e => onChange(e.target.value)}
+          placeholder={placeholder} maxLength={maxLength}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          style={{
+            width: '100%', border: 'none', outline: 'none', background: 'transparent',
+            color: 'var(--fg)', fontFamily: 'var(--display)', fontSize: 18, fontWeight: 500,
+            padding: '8px 0', letterSpacing: -0.1,
+          }}
+        />
+        {rightAdornment && <div style={{ position: 'absolute', right: 0, top: 8 }}>{rightAdornment}</div>}
+      </div>
+      {hint && (
+        <div style={{ marginTop: 6, fontFamily: 'var(--body)', fontSize: 12, color: hintError ? 'var(--accent)' : 'var(--fg-dim)' }}>{hint}</div>
+      )}
+    </div>
+  );
+}
+
+function StepHeader({ step, total, title, subtitle, onBack }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        {onBack ? (
+          <button onClick={onBack} style={{
+            background: 'transparent', border: 'none', color: 'var(--fg)',
+            fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.5,
+            textTransform: 'uppercase', cursor: 'pointer', padding: 0,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>← Back</button>
+        ) : <div />}
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.5, color: 'var(--fg-dim)' }}>
+          {String(step).padStart(2, '0')} / {String(total).padStart(2, '0')}
+        </div>
+      </div>
+      <div style={{
+        fontFamily: 'var(--display)', fontSize: 34, fontWeight: 700,
+        lineHeight: 1.02, letterSpacing: -1.2, color: 'var(--fg)', marginBottom: 10,
+      }}>{title}</div>
+      {subtitle && (
+        <div style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 30 }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProgressPips({ step, total }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, padding: '0 24px 14px' }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} style={{
+          flex: 1, height: 2,
+          background: i < step ? 'var(--accent)' : 'var(--line)',
+          transition: 'background .3s',
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function ConsentRow() {
+  return (
+    <div style={{ marginTop: 22 }}>
+      <div style={{ fontFamily: 'var(--body)', fontSize: 11, lineHeight: 1.45, color: 'var(--fg-dim)', fontStyle: 'italic' }}>
+        By continuing, you agree to be contacted by Axxel regarding this experience and related offerings. Unsubscribe anytime.
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gift illustrations
+// ─────────────────────────────────────────────────────────────
+
+function GiftIllustration({ type, name = '' }) {
+  // ── IMAGE PATHS ──────────────────────────────────────────────
+  // Save your images into an `images/` folder in the same repo:
+  //   images/tumbler.jpg   ← Coffee Tumbler
+  //   images/notebook.jpg  ← Notebook
+  //   images/card.jpg      ← NETS Prepaid Card
+  const imgs = {
+    mug:      'images/tumbler.png',
+    notebook: 'images/notebook.png',
+    card:     'images/card.png',
+  };
+  // Show decoration label only for text personalisation (not sticker IDs)
+  const showLabel = name && !name.startsWith('sticker-');
+
+  // Tumbler: engraving overlay — centered on cup body, debossed look
+  const engravingOverlay = showLabel && type === 'mug' && (
+    <div style={{
+      position: 'absolute', top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      fontFamily: 'var(--body)', fontSize: 15, fontWeight: 400,
+      letterSpacing: 4, textTransform: 'uppercase',
+      color: 'rgba(185,180,175,0.82)',
+      textShadow: '0 -1px 0 rgba(255,255,255,0.18), 0 2px 4px rgba(0,0,0,0.95)',
+      pointerEvents: 'none', whiteSpace: 'nowrap',
+      mixBlendMode: 'screen',
+    }}>
+      {name.toUpperCase()}
+    </div>
+  );
+
+  // Other gifts: accent bar at bottom
+  const barOverlay = showLabel && type !== 'mug' && (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      padding: '10px 14px',
+      background: 'rgba(0,0,0,0.6)',
+      fontFamily: 'var(--display)', fontSize: 13, fontWeight: 700,
+      color: 'var(--accent)', letterSpacing: 2, textAlign: 'center',
+      textTransform: 'uppercase',
+    }}>
+      {name.toUpperCase()}
+    </div>
+  );
+
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#fff', overflow: 'hidden' }}>
+      <img
+        src={imgs[type]}
+        alt={type}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+      />
+      {engravingOverlay}
+      {barOverlay}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Screens
+// ─────────────────────────────────────────────────────────────
+
+function WelcomeScreen({ onStart, eventName, venue, lineCopy, onStaffTap, mobile }) {
+  const tapRef = useRef({ count: 0, timer: null });
+  const handleLiveTap = () => {
+    tapRef.current.count++;
+    clearTimeout(tapRef.current.timer);
+    tapRef.current.timer = setTimeout(() => { tapRef.current.count = 0; }, 1000);
+    if (tapRef.current.count >= 3) {
+      tapRef.current.count = 0;
+      onStaffTap && onStaffTap();
+    }
+  };
+  return (
+    <div style={{
+      height: '100%', display: 'flex', flexDirection: 'column',
+      boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px', position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px)',
+        backgroundSize: '40px 40px',
+        opacity: 0.35, pointerEvents: 'none',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
+          <span onClick={handleLiveTap} style={{ userSelect: 'none' }}><Tag>Live</Tag></span>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          fontFamily: 'var(--display)', fontSize: 56, fontWeight: 800,
+          lineHeight: 0.92, letterSpacing: -2.5, color: 'var(--fg)', textTransform: 'uppercase',
+        }}>
+          Live<br/>
+          <span style={{ color: 'var(--accent)', fontStyle: 'italic', fontWeight: 500 }}>custom.</span><br/>
+          Booth.
+        </div>
+        <div style={{
+          marginTop: 16, fontFamily: 'var(--mono)', fontSize: 10,
+          letterSpacing: 2, textTransform: 'uppercase', color: 'var(--fg)',
+        }}>
+          Culture Cartel × Wicked Wallop
+        </div>
+        <div style={{ marginTop: 22, fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, maxWidth: 320 }}>
+          {lineCopy}
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginBottom: 18, fontFamily: 'var(--mono)', fontSize: 10,
+          letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
+        }}>
+          <span>// {eventName}</span>
+          <span>Est. 3 min</span>
+        </div>
+        <Btn onClick={onStart}>Start →</Btn>
+        <div style={{
+          marginTop: 14, textAlign: 'center',
+          fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-dim)', letterSpacing: 1.2,
+        }}>
+          One per guest · Collect on-site
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
+  const [checking, setChecking] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const emailCache = useRef({});
+
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
+  const validPhone = /^\+65[89]\d{7}$/.test(data.phone.replace(/[\s-]/g, ''));
+  const valid =
+    data.name.trim().length > 0 &&
+    data.company.trim().length > 0 &&
+    validEmail &&
+    validPhone;
+
+  // Silently pre-check email as user types (debounced 800ms)
+  useEffect(() => {
+    if (!validEmail) return;
+    const timer = setTimeout(async () => {
+      if (emailCache.current[data.email] !== undefined) return; // already cached
+      try {
+        const exists = await checkEmailExists(data.email);
+        emailCache.current[data.email] = exists;
+        if (exists) setEmailError('This email has already been used for a redemption.');
+      } catch { /* silent fail — will retry on Next */ }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [data.email, validEmail]);
+
+  const handleNext = async () => {
+    setEmailError('');
+    // Use cached result if available
+    if (emailCache.current[data.email] !== undefined) {
+      if (emailCache.current[data.email]) {
+        setEmailError('This email has already been used for a redemption.');
+        return;
+      }
+      onNext();
+      return;
+    }
+    // Fallback: live check
+    setChecking(true);
+    try {
+      const exists = await checkEmailExists(data.email);
+      emailCache.current[data.email] = exists;
+      if (exists) {
+        setEmailError('This email has already been used for a redemption.');
+      } else {
+        onNext();
+      }
+    } catch {
+      setEmailError('Could not verify. Please check your connection and try again.');
+    }
+    setChecking(false);
+  };
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
+      <StepHeader
+        step={1} total={4} onBack={onBack}
+        title="Your details."
+        subtitle="We'll send you an SMS notification when it's ready to collect."
+      />
+      <div style={{ flex: 1, overflowY: 'auto', margin: mobile ? '0 -20px' : '0 -24px', padding: mobile ? '0 20px 20px' : '0 24px 20px' }}>
+        <Field label="Full name" value={data.name} onChange={v => setData({ ...data, name: v })} placeholder="Jane Tan"/>
+        <Field label="Company" value={data.company} onChange={v => setData({ ...data, company: v })} placeholder="e.g. Hypebeast SG"/>
+        <Field
+          label="Company email" value={data.email} onChange={v => { setData({ ...data, email: v }); setEmailError(''); }}
+          placeholder="you@company.com" type="email"
+          hint={emailError || 'One redemption per email address.'}
+          hintError={!!emailError}
+        />
+        <Field
+          label="Mobile"
+          value={data.phone} onChange={v => setData({ ...data, phone: v })}
+          placeholder="+65 9123 4567" type="tel"
+          hint={data.phone && !validPhone ? 'Enter a valid SG mobile number, e.g. +6591234567' : "We'll SMS you here when your gift is ready."}
+        />
+        <ConsentRow />
+      </div>
+      <Btn onClick={handleNext} disabled={!valid || checking} style={{ flexShrink: 0 }}>
+        Next →
+      </Btn>
+    </div>
+  );
+}
+
+function GiftCard({ gift, selected, onSelect, showInventory }) {
+  const out = gift.remaining === 0;
+  return (
+    <button
+      onClick={() => !out && onSelect(gift.id)}
+      disabled={out}
+      style={{
+        width: '100%', textAlign: 'left', padding: 0, border: 'none', cursor: out ? 'not-allowed' : 'pointer',
+        background: 'var(--surface)', borderRadius: 18, overflow: 'hidden',
+        outline: selected ? '2px solid var(--accent)' : '1px solid var(--line)',
+        outlineOffset: selected ? -2 : -1,
+        transition: 'outline .15s',
+        marginBottom: 12, opacity: out ? 0.4 : 1, display: 'block',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+        <div style={{ width: 120, height: 100, flexShrink: 0, background: 'var(--surface-2)' }}>
+          <GiftIllustration type={gift.id} />
+        </div>
+        <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{
+              fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5,
+              color: selected ? 'var(--accent)' : 'var(--fg-dim)', textTransform: 'uppercase', marginBottom: 4,
+            }}>{gift.code}</div>
+            <div style={{ fontFamily: 'var(--display)', fontSize: 18, fontWeight: 700, color: 'var(--fg)', letterSpacing: -0.4, fontVariant: 'small-caps' }}>
+              {gift.name}
+            </div>
+            <div style={{ fontFamily: 'var(--body)', fontSize: 12, color: 'var(--fg-dim)', marginTop: 2 }}>{gift.blurb}</div>
+          </div>
+          {showInventory && (
+            <div style={{
+              fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase',
+              color: out ? '#ff4d4d' : 'var(--fg-dim)', marginTop: 6,
+            }}>
+              {out ? '◆ Sold out' : '◆ In stock'}
+            </div>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function GiftPickerScreen({ gifts, selected, setSelected, onNext, onBack, showInventory, mobile }) {
+  const px = mobile ? 20 : 24;
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? `24px ${px}px 20px` : `40px ${px}px 24px` }}>
+      <StepHeader step={2} total={4} onBack={onBack} title="Pick your piece." subtitle="Choose from 3 curated drops."/>
+      <div style={{ flex: 1, overflowY: 'auto', margin: `0 -${px}px`, padding: `0 ${px}px` }}>
+        {gifts.map(g => (
+          <GiftCard key={g.id} gift={g} selected={selected === g.id} onSelect={setSelected} showInventory={showInventory}/>
+        ))}
+      </div>
+      <Btn onClick={onNext} disabled={!selected}>Next →</Btn>
+    </div>
+  );
+}
+
+function StickerPicker({ stickers, value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+      {stickers.map(s => {
+        const selected = value === s.id;
+        return (
+          <button key={s.id} onClick={() => onChange(s.id)} style={{
+            flex: 1, padding: 0, border: 'none', background: 'none', cursor: 'pointer',
+            outline: selected ? '2px solid var(--accent)' : '1px solid var(--line)',
+            outlineOffset: selected ? -2 : -1,
+            borderRadius: 12, overflow: 'hidden', transition: 'outline .15s',
+          }}>
+            <div style={{
+              aspectRatio: '1', background: 'var(--surface-2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {s.img
+                ? <img src={s.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={s.name} />
+                : <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-dim)', letterSpacing: 1 }}>IMG</span>
+              }
+            </div>
+            <div style={{
+              padding: '7px 4px',
+              fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2,
+              textTransform: 'uppercase', textAlign: 'center',
+              background: selected ? 'var(--accent)' : 'var(--surface)',
+              color: selected ? '#0a0a0a' : 'var(--fg)',
+            }}>
+              {s.name}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, onBack, submitting, submitError, mobile }) {
+  const MAX = 8;
+  const isSticker = !!gift.stickers;
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
+      <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
+        subtitle={isSticker ? "Choose from 3 designs. We decorate on the spot." : "Up to 8 characters. We decorate on the spot."}/>
+      <div style={{
+        background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
+        marginBottom: 22, position: 'relative', overflow: 'hidden',
+      }}>
+        <GiftIllustration type={gift.id} name={personalisation || gift.samplePlaceholder} />
+        <div style={{
+          position: 'absolute', top: 12, left: 14,
+          fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
+        }}>
+          Preview · {gift.name}
+        </div>
+        <div style={{
+          position: 'absolute', bottom: 10, right: 14,
+          fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, color: 'var(--fg-dim)',
+        }}>
+          FINAL DECORATION MAY VARY
+        </div>
+      </div>
+
+      {isSticker ? (
+        <StickerPicker stickers={gift.stickers} value={personalisation} onChange={setPersonalisation} />
+      ) : (
+        <Field
+          label="Decoration" value={personalisation}
+          onChange={v => setPersonalisation(v.slice(0, MAX))}
+          placeholder="Your name or handle" maxLength={MAX}
+          hint="Up to 8 characters. Will appear in ALL CAPS."
+        />
+      )}
+
+      <div style={{ flex: 1 }} />
+      {submitError && (
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ff4d4d', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' }}>
+          {submitError}
+        </div>
+      )}
+      <Btn onClick={onNext} disabled={personalisation.trim().length === 0 || submitting}>
+        {submitting ? 'Submitting…' : 'Confirm →'}
+      </Btn>
+    </div>
+  );
+}
+
+function TicketRow({ k, v, highlight, smallCaps }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '8px 0' }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase' }}>{k}</div>
+      <div style={{
+        fontFamily: 'var(--display)',
+        fontSize: highlight ? 16 : 14, fontWeight: highlight ? 700 : 500,
+        letterSpacing: -0.2,
+        color: highlight ? 'var(--accent)' : 'var(--fg)',
+        textAlign: 'right',
+        fontVariant: smallCaps ? 'small-caps' : 'normal',
+      }}>{v}</div>
+    </div>
+  );
+}
+
+function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }) {
+  const [dots, setDots] = useState('');
+  useEffect(() => {
+    const i = setInterval(() => setDots(d => d.length >= 3 ? '' : d + '·'), 400);
+    return () => clearInterval(i);
+  }, []);
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+        <Tag>Ticket</Tag>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.5, color: 'var(--fg-dim)' }}>04 / 04</div>
+      </div>
+
+      <div style={{
+        background: 'var(--surface)', borderRadius: 22,
+        border: '1px solid var(--line)', padding: 24,
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{
+          fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.5,
+          color: 'var(--fg-dim)', textTransform: 'uppercase',
+          display: 'flex', justifyContent: 'space-between', marginBottom: 18,
+        }}>
+          <span>Powered by Axxel</span>
+        </div>
+        <div style={{
+          fontFamily: 'var(--display)', fontSize: 64, fontWeight: 800,
+          lineHeight: 0.9, letterSpacing: -2.5, color: 'var(--fg)', marginBottom: 4,
+        }}>{ticket}</div>
+        <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--fg-dim)', marginBottom: 22 }}>
+          Queue no. · Keep this screen handy.
+        </div>
+        <div style={{ borderTop: '1px dashed var(--line)', margin: '0 -24px 20px' }} />
+        <TicketRow k="Gift" v={gift.name} smallCaps />
+        <TicketRow k="Decoration" v={(gift.stickers
+          ? (gift.stickers.find(s => s.id === personalisation)?.name ?? personalisation)
+          : personalisation).toUpperCase() || '—'} highlight />
+        <TicketRow k="For" v={data.name} />
+        <TicketRow k="SMS to" v={data.phone} />
+      </div>
+
+      <div style={{
+        marginTop: 20, padding: '18px 20px',
+        background: 'var(--surface)', color: 'var(--fg)',
+        borderRadius: 14, border: '1px solid var(--line)',
+      }}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.7, marginBottom: 4 }}>Status</div>
+        <div style={{ fontFamily: 'var(--display)', fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>
+          Decorating{dots}
+        </div>
+        <div style={{ marginTop: 4, fontFamily: 'var(--body)', fontSize: 13, opacity: 0.75 }}>
+          You'll receive an SMS on {data.phone} when your gift is ready.
+        </div>
+      </div>
+
+      <div style={{ flex: 1 }} />
+      <Btn onClick={onCollect} variant="dark">I've collected it ✓</Btn>
+    </div>
+  );
+}
+
+function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
+  const contactUrl = `${CONFIG.CONTACT_FORM_URL}?prefill_Name=${encodeURIComponent(data.name)}&prefill_Email=${encodeURIComponent(data.email)}&prefill_Company=${encodeURIComponent(data.company)}`;
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Tag style={{ alignSelf: 'flex-start', marginBottom: 24 }}>Collected</Tag>
+        <div style={{
+          fontFamily: 'var(--display)', fontSize: 48, fontWeight: 800,
+          lineHeight: 0.95, letterSpacing: -2, color: 'var(--fg)', textTransform: 'uppercase', marginBottom: 18,
+        }}>
+          Thanks,<br/>
+          <span style={{ color: 'var(--accent)', fontStyle: 'italic', fontWeight: 500, textTransform: 'none' }}>
+            {data.name.split(' ')[0]}.
+          </span>
+        </div>
+        <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 12 }}>
+          Your <b style={{ color: 'var(--fg)', fontVariant: 'small-caps' }}>{gift.name}</b>, decorated <b style={{ color: 'var(--fg)' }}>{personalisation.toUpperCase()}</b>, has been collected.
+        </div>
+        <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 30 }}>
+          Show it off. Tag{' '}
+          <a href="https://www.instagram.com/axxelmarketing" target="_blank" rel="noopener noreferrer"
+            style={{ color: 'var(--fg)', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid var(--accent)' }}>
+            @axxelmarketing
+          </a>
+        </div>
+        <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 16, border: '1px solid var(--line)' }}>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 600, color: 'var(--fg)', letterSpacing: -0.2, marginBottom: 8 }}>
+            Bring the Axxel Live Experience to your next event.
+          </div>
+          <a href={contactUrl} target="_blank" rel="noopener noreferrer"
+            style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.2, color: 'var(--accent)', textDecoration: 'none', textTransform: 'uppercase' }}>
+            Get in Touch →
+          </a>
+        </div>
+      </div>
+      <Btn onClick={onRestart} variant="ghost">Back to start</Btn>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Staff panel (sold-out controls)
+// ─────────────────────────────────────────────────────────────
+
+function StaffPanel({ open, onClose, gifts, soldOut, setSoldOut }) {
+  const [authed, setAuthed] = useState(false);
+  const [pwInput, setPwInput] = useState('');
+  const [pwError, setPwError] = useState('');
+
+  // Reset auth state when panel closes
+  useEffect(() => {
+    if (!open) { setAuthed(false); setPwInput(''); setPwError(''); }
+  }, [open]);
+
+  if (!open) return null;
+
+  const handleAuth = () => {
+    if (pwInput === CONFIG.STAFF_PASSWORD) {
+      setAuthed(true);
+      setPwError('');
+    } else {
+      setPwError('Incorrect password.');
+      setPwInput('');
+    }
+  };
+
+  const toggle = (id) => {
+    setSoldOut(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }} onClick={onClose}>
+      <div style={{
+        background: '#111', border: '1px solid #2a2a2a', borderRadius: 18,
+        padding: 24, width: 300, boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+        fontFamily: 'JetBrains Mono, monospace',
+      }} onClick={e => e.stopPropagation()}>
+        {/* header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 11, letterSpacing: 1.5, color: '#888', textTransform: 'uppercase' }}>Staff · Sold Out</div>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', color: '#666', fontSize: 20,
+            cursor: 'pointer', lineHeight: 1, padding: 0,
+          }}>×</button>
+        </div>
+
+        {!authed ? (
+          /* password gate */
+          <div>
+            <div style={{ fontSize: 10, color: '#666', letterSpacing: 1.2, marginBottom: 8, textTransform: 'uppercase' }}>Password</div>
+            <input
+              type="password" value={pwInput}
+              onChange={e => setPwInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleAuth()}
+              autoFocus
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                background: '#0a0a0a', border: '1px solid #2a2a2a',
+                color: '#fff', padding: '9px 10px', borderRadius: 6,
+                fontSize: 14, fontFamily: 'inherit', outline: 'none', marginBottom: 8,
+              }}
+            />
+            {pwError && <div style={{ fontSize: 10, color: '#ff4d4d', letterSpacing: 1, marginBottom: 8 }}>{pwError}</div>}
+            <button onClick={handleAuth} style={{
+              width: '100%', padding: '10px 0', background: '#d4ff3a', color: '#0a0a0a',
+              border: 'none', borderRadius: 8, cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 700,
+            }}>Unlock</button>
+          </div>
+        ) : (
+          /* sold-out toggles */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {gifts.map(g => (
+              <div key={g.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '12px 14px', background: '#1a1a1a', borderRadius: 10,
+                border: `1px solid ${soldOut[g.id] ? '#ff4d2e44' : '#2a2a2a'}`,
+              }}>
+                <div style={{ fontSize: 12, color: soldOut[g.id] ? '#ff4d2e' : '#ccc', letterSpacing: 0.5, fontVariant: 'small-caps' }}>
+                  {g.name}
+                </div>
+                <button onClick={() => toggle(g.id)} style={{
+                  fontSize: 10, padding: '5px 10px', borderRadius: 4, cursor: 'pointer',
+                  background: soldOut[g.id] ? '#ff4d2e' : '#2a2a2a',
+                  color: soldOut[g.id] ? '#fff' : '#888',
+                  border: 'none', fontFamily: 'inherit', letterSpacing: 1, textTransform: 'uppercase',
+                }}>
+                  {soldOut[g.id] ? 'Sold out' : 'In stock'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tweaks panel
+// ─────────────────────────────────────────────────────────────
+
+function TweaksPanel({ tweaks, setTweak, visible }) {
+  const [open, setOpen] = useState(true);
+  if (!visible) return null;
+
+  const inputStyle = {
+    width: '100%', boxSizing: 'border-box', background: '#0a0a0a',
+    border: '1px solid #2a2a2a', color: '#fff', padding: '7px 9px',
+    borderRadius: 4, fontSize: 11, fontFamily: 'JetBrains Mono, monospace', outline: 'none',
+  };
+
+  const TSection = ({ label, children }) => (
+    <div>
+      <div style={{ fontSize: 9, letterSpacing: 1.6, color: '#888', marginBottom: 6, textTransform: 'uppercase' }}>{label}</div>
+      {children}
+    </div>
+  );
+
+  const Chips = ({ value, options, onChange }) => (
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      {options.map(o => (
+        <button key={o.v} onClick={() => onChange(o.v)} style={{
+          fontSize: 10, padding: '5px 9px', borderRadius: 4, cursor: 'pointer',
+          background: value === o.v ? '#d4ff3a' : '#1a1a1a',
+          color: value === o.v ? '#0a0a0a' : '#ccc',
+          border: '1px solid ' + (value === o.v ? '#d4ff3a' : '#2a2a2a'),
+          fontFamily: 'JetBrains Mono, monospace', letterSpacing: 0.8, textTransform: 'uppercase',
+        }}>{o.l}</button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 16, right: 16, zIndex: 999,
+      width: open ? 300 : 48,
+      background: '#111', color: '#fff', borderRadius: 14,
+      border: '1px solid #2a2a2a', overflow: 'hidden',
+      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+      boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+      transition: 'width .2s',
+    }}>
+      <button onClick={() => setOpen(!open)} style={{
+        width: '100%', background: '#1a1a1a', border: 'none', color: '#fff',
+        padding: '10px 14px', textAlign: 'left', cursor: 'pointer',
+        fontFamily: 'inherit', fontSize: 11, letterSpacing: 1.5,
+        textTransform: 'uppercase', display: 'flex',
+        justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <span>{open ? 'Tweaks' : '⚙'}</span>
+        {open && <span style={{ opacity: 0.5 }}>−</span>}
+      </button>
+      {open && (
+        <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <TSection label="Style">
+            <Chips value={tweaks.style} options={[
+              { v: 'neon', l: 'Neon' }, { v: 'acid', l: 'Acid' },
+              { v: 'cream', l: 'Cream' }, { v: 'mono', l: 'Mono' },
+            ]} onChange={v => setTweak({ style: v })} />
+          </TSection>
+          <TSection label="Accent">
+            <div style={{ display: 'flex', gap: 6 }}>
+              {['#d4ff3a', '#ff4d2e', '#00e5ff', '#ff2ea8', '#ffffff'].map(c => (
+                <button key={c} onClick={() => setTweak({ accent: c })} style={{
+                  width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
+                  background: c, border: tweaks.accent === c ? '2px solid #fff' : '1px solid #333',
+                }} />
+              ))}
+            </div>
+          </TSection>
+          <TSection label="Inventory">
+            <Chips value={tweaks.showInventory ? 'on' : 'off'} options={[
+              { v: 'on', l: 'Visible' }, { v: 'off', l: 'Hidden' },
+            ]} onChange={v => setTweak({ showInventory: v === 'on' })} />
+          </TSection>
+          <TSection label="Event name">
+            <input value={tweaks.eventName} onChange={e => setTweak({ eventName: e.target.value })} style={inputStyle}/>
+          </TSection>
+          <TSection label="Venue">
+            <input value={tweaks.venue} onChange={e => setTweak({ venue: e.target.value })} style={inputStyle}/>
+          </TSection>
+          <TSection label="Low stock threshold">
+            <input type="number" value={tweaks.lowStock} onChange={e => setTweak({ lowStock: Number(e.target.value) })} style={inputStyle}/>
+          </TSection>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Initial data
+// ─────────────────────────────────────────────────────────────
+
+const INITIAL_GIFTS = [
+  { id: 'mug',      code: 'CC-001',                  name: 'Coffee Tumbler', blurb: 'Everyday carry; insulated stainless steel.',   samplePlaceholder: 'CULTURE', remaining: 74 },
+  { id: 'notebook', code: 'CC-002',                  name: 'Notebook',       blurb: 'A5 hardcover dot-grid. Embossed on the spot.', samplePlaceholder: 'CARTEL',  remaining: 18,
+    stickers: [
+      { id: 'sticker-1', name: 'Design 1', img: null },
+      { id: 'sticker-2', name: 'Design 2', img: null },
+      { id: 'sticker-3', name: 'Design 3', img: null },
+    ]
+  },
+  { id: 'card',     code: 'CC-003',                   name: 'NETS Prepaid Card', blurb: 'For public transport and everyday expenses.', samplePlaceholder: 'YOUR NAME', remaining: 42 },
+];
+
+async function makeTicket() {
+  // Fetch current record count for sequential number
+  let count = 0;
+  try {
+    let offset = '';
+    do {
+      const url = `https://api.airtable.com/v0/${CONFIG.AIRTABLE_BASE}/${CONFIG.AIRTABLE_TABLE}?fields[]=Ticket&pageSize=100` + (offset ? `&offset=${offset}` : '');
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${CONFIG.AIRTABLE_TOKEN}` } });
+      const json = await res.json();
+      count += (json.records?.length ?? 0);
+      offset = json.offset || '';
+    } while (offset);
+  } catch { /* fallback to random if fetch fails */ }
+
+  const letters = Array.from({ length: 2 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
+  const seq = String(count + 1).padStart(3, '0');
+  return `CC·${letters}${seq}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// App
+// ─────────────────────────────────────────────────────────────
+
+function App() {
+  const [tweaks, setTweaksState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lc.tweaks');
+      return saved ? { ...window.TWEAK_DEFAULTS, ...JSON.parse(saved) } : window.TWEAK_DEFAULTS;
+    } catch { return window.TWEAK_DEFAULTS; }
+  });
+  const setTweak = (patch) => {
+    const next = { ...tweaks, ...patch };
+    setTweaksState(next);
+    localStorage.setItem('lc.tweaks', JSON.stringify(next));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*');
+  };
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', tweaks.accent);
+  }, [tweaks.accent]);
+
+  const [screenW, setScreenW] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const handler = () => setScreenW(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  const isPhone = screenW <= 600;
+
+  const [tweaksVisible, setTweaksVisible] = useState(false);
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const [step, setStep] = useState(() => Number(localStorage.getItem('lc.step') || 0));
+  const [data, setData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lc.data')) || { name: '', company: '', email: '', phone: '+65' }; }
+    catch { return { name: '', company: '', email: '', phone: '+65' }; }
+  });
+  const [selectedGiftId, setSelectedGiftId] = useState(() => localStorage.getItem('lc.gift') || null);
+  const [personalisation, setPersonalisation] = useState(() => localStorage.getItem('lc.pers') || '');
+  const [ticket, setTicket] = useState(() => localStorage.getItem('lc.ticket') || '');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const prefetchedTicket = useRef(null);
+
+  // Pre-fetch ticket number when user reaches personalise screen (step 3)
+  useEffect(() => {
+    if (step === 3) {
+      prefetchedTicket.current = null;
+      makeTicket().then(t => { prefetchedTicket.current = t; });
+    }
+  }, [step]);
+  const [soldOut, setSoldOut] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lc.soldout')) || {}; }
+    catch { return {}; }
+  });
+  const [staffOpen, setStaffOpen] = useState(false);
+  useEffect(() => localStorage.setItem('lc.soldout', JSON.stringify(soldOut)), [soldOut]);
+
+  useEffect(() => localStorage.setItem('lc.step', step), [step]);
+  useEffect(() => localStorage.setItem('lc.data', JSON.stringify(data)), [data]);
+  useEffect(() => {
+    if (selectedGiftId) {
+      localStorage.setItem('lc.gift', selectedGiftId);
+      setPersonalisation(''); // reset when gift changes
+    }
+  }, [selectedGiftId]);
+  useEffect(() => localStorage.setItem('lc.pers', personalisation), [personalisation]);
+  useEffect(() => { if (ticket) localStorage.setItem('lc.ticket', ticket); }, [ticket]);
+
+  const gifts = useMemo(() => INITIAL_GIFTS.map(g => ({
+    ...g,
+    remaining: soldOut[g.id] ? 0 : g.remaining,
+    low: !soldOut[g.id] && g.remaining <= tweaks.lowStock,
+  })), [tweaks.lowStock, soldOut]);
+  const selectedGift = gifts.find(g => g.id === selectedGiftId);
+
+  const go = (s) => setStep(s);
+  const restart = () => {
+    ['lc.step','lc.data','lc.gift','lc.pers','lc.ticket'].forEach(k => localStorage.removeItem(k));
+    setData({ name: '', company: '', email: '', phone: '+65' });
+    setSelectedGiftId(null);
+    setPersonalisation('');
+    setTicket('');
+    setSubmitError('');
+    setStep(0);
+  };
+
+  const submitRedemption = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+    const t = prefetchedTicket.current ?? await makeTicket();
+    try {
+      await submitToAirtable({
+        Name:       data.name,
+        Company:    data.company,
+        Email:      data.email,
+        Phone:      data.phone,
+        Gift:       selectedGift.name.toLowerCase(),
+        Decoration: (selectedGift.stickers
+          ? (selectedGift.stickers.find(s => s.id === personalisation)?.name ?? personalisation)
+          : personalisation).toUpperCase(),
+        Ticket:     t,
+        Status:     'Queued',
+      });
+      setTicket(t);
+      setStep(4);
+    } catch {
+      setSubmitError('Submission failed. Please check your connection and try again.');
+    }
+    setSubmitting(false);
+  };
+
+  const screenMap = {
+    0: <WelcomeScreen
+          eventName={tweaks.eventName} venue={tweaks.venue}
+          lineCopy="A complimentary gift to mark Culture Cartel × Wicked Wallop's new partnership. Pick, customise, collect on-site — brought to you by Axxel Marketing."
+          onStart={() => go(1)} onStaffTap={() => setStaffOpen(true)} mobile={isPhone} />,
+    1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
+    2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}
+          showInventory={tweaks.showInventory} onNext={() => go(3)} onBack={() => go(1)} mobile={isPhone} />,
+    3: <PersonaliseScreen gift={selectedGift} personalisation={personalisation}
+          setPersonalisation={setPersonalisation} onNext={submitRedemption} onBack={() => go(2)}
+          submitting={submitting} submitError={submitError} mobile={isPhone} />,
+    4: <TicketScreen ticket={ticket} gift={selectedGift} personalisation={personalisation}
+          data={data} onCollect={() => go(5)} mobile={isPhone} />,
+    5: <DoneScreen data={data} gift={selectedGift} personalisation={personalisation} onRestart={restart} mobile={isPhone} />,
+  };
+
+  const showPips = step >= 1 && step <= 3;
+
+  const label = `0${step+1} ${['Welcome','Details','Gift','Personalise','Ticket','Done'][step]}`;
+  const pips = showPips ? <div style={{ paddingBottom: isPhone ? 16 : 24 }}><ProgressPips step={step} total={4} /></div>
+                        : <div style={{ height: isPhone ? 16 : 24, flexShrink: 0 }} />;
+  const panels = <>
+    <TweaksPanel tweaks={tweaks} setTweak={setTweak} visible={tweaksVisible} />
+    <StaffPanel open={staffOpen} onClose={() => setStaffOpen(false)} gifts={INITIAL_GIFTS} soldOut={soldOut} setSoldOut={setSoldOut} />
+  </>;
+
+  return (
+    <div data-screen-label={label} className={`style-${tweaks.style}`}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 10,
+        background: isPhone ? 'var(--bg)' : '#0d0d0d',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+      <div style={{
+        width: '100%',
+        maxWidth: isPhone ? undefined : 480,
+        height: isPhone ? '100%' : 'min(860px, calc(100% - 48px))',
+        background: 'var(--bg)', color: 'var(--fg)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        borderRadius: isPhone ? 0 : 24,
+        boxShadow: isPhone ? 'none' : '0 32px 80px rgba(0,0,0,0.5)',
+      }}>
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <div className="screen" key={step} style={{ position: 'absolute', inset: 0 }}>{screenMap[step]}</div>
+        </div>
+        {pips}
+      </div>
+      {panels}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+// Set --app-height for accurate mobile viewport (excludes browser chrome)
+function setAppHeight() {
+  document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 100));
+
+// Layout is fully CSS-driven — no scale transform needed
+</script>
+</body>
+</html>
