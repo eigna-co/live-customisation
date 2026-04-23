@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CC × WW Press Conference · Live Customisation · Axxel Marketing</title>
+<title>Live Customisation · The Gift Expert</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,9 +114,9 @@
 <script>
   window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
     "style": "cream",
-    "accent": "#ff4d2e",
+    "accent": "#38bedc",
     "showInventory": true,
-    "eventName": "AN AXXEL LIVE EXPERIENCE",
+    "eventName": "A TGE LIVE EXPERIENCE",
     "venue": "AXXEL",
     "lowStock": 20
   }/*EDITMODE-END*/;
@@ -449,7 +449,7 @@ function ConsentRow() {
   return (
     <div style={{ marginTop: 22 }}>
       <div style={{ fontFamily: 'var(--body)', fontSize: 11, lineHeight: 1.45, color: 'var(--fg-dim)', fontStyle: 'italic' }}>
-        By continuing, you agree to be contacted by Axxel regarding this experience and related offerings. Unsubscribe anytime.
+        By continuing, you agree to be contacted by The Gift Expert regarding this experience and related offerings. Unsubscribe anytime.
       </div>
     </div>
   );
@@ -734,32 +734,28 @@ function GiftPickerScreen({ gifts, selected, setSelected, onNext, onBack, showIn
 
 function StickerPicker({ stickers, value, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+    <div style={{
+      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: 8, overflowY: 'auto', maxHeight: 360,
+      marginBottom: 16, paddingRight: 4,
+    }}>
       {stickers.map(s => {
         const selected = value === s.id;
         return (
           <button key={s.id} onClick={() => onChange(s.id)} style={{
-            flex: 1, padding: 0, border: 'none', background: 'none', cursor: 'pointer',
+            padding: 0, border: 'none', background: 'none', cursor: 'pointer',
             boxShadow: selected ? 'inset 0 0 0 2px var(--accent)' : 'inset 0 0 0 1px var(--line)',
-            borderRadius: 12, overflow: 'hidden', transition: 'box-shadow .15s',
+            borderRadius: 10, overflow: 'hidden', transition: 'box-shadow .15s',
+            aspectRatio: '1', display: 'block', width: '100%',
           }}>
             <div style={{
-              aspectRatio: '1', background: 'var(--surface-2)',
+              width: '100%', height: '100%', background: '#000',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {s.img
-                ? <img src={s.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={s.name} />
-                : <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-dim)', letterSpacing: 1 }}>IMG</span>
+                ? <img src={s.img} style={{ width: '90%', height: '90%', objectFit: 'contain' }} alt={s.name} />
+                : <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-dim)' }}>{s.name}</span>
               }
-            </div>
-            <div style={{
-              padding: '7px 4px',
-              fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2,
-              textTransform: 'uppercase', textAlign: 'center',
-              background: selected ? 'var(--accent)' : 'var(--surface)',
-              color: selected ? '#0a0a0a' : 'var(--fg)',
-            }}>
-              {s.name}
             </div>
           </button>
         );
@@ -858,7 +854,7 @@ function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }
           color: 'var(--fg-dim)', textTransform: 'uppercase',
           display: 'flex', justifyContent: 'space-between', marginBottom: 18,
         }}>
-          <span>Powered by Axxel</span>
+          <span>Powered by The Gift Expert</span>
         </div>
         <div style={{
           fontFamily: 'var(--display)', fontSize: 64, fontWeight: 800,
@@ -916,14 +912,14 @@ function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
         </div>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 30 }}>
           Show it off. Tag{' '}
-          <a href="https://www.instagram.com/axxelmarketing" target="_blank" rel="noopener noreferrer"
+          <a href="https://www.instagram.com/thegiftexpert_sg/" target="_blank" rel="noopener noreferrer"
             style={{ color: 'var(--fg)', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid var(--accent)' }}>
-            @axxelmarketing
+            @thegiftexpert_sg
           </a>
         </div>
         <div style={{ background: 'var(--surface)', borderRadius: 14, padding: 16, border: '1px solid var(--line)' }}>
           <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 600, color: 'var(--fg)', letterSpacing: -0.2, marginBottom: 8 }}>
-            Bring the Axxel Live Experience to your next event.
+            Bring the TGE Live Experience to your next event.
           </div>
           <a href={contactUrl} target="_blank" rel="noopener noreferrer"
             style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.2, color: 'var(--accent)', textDecoration: 'none', textTransform: 'uppercase' }}>
@@ -1103,7 +1099,7 @@ function TweaksPanel({ tweaks, setTweak, visible }) {
           </TSection>
           <TSection label="Accent">
             <div style={{ display: 'flex', gap: 6 }}>
-              {['#d4ff3a', '#ff4d2e', '#00e5ff', '#ff2ea8', '#ffffff'].map(c => (
+              {['#38bedc', '#d4ff3a', '#ff4d2e', '#ff2ea8', '#ffffff'].map(c => (
                 <button key={c} onClick={() => setTweak({ accent: c })} style={{
                   width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
                   background: c, border: tweaks.accent === c ? '2px solid #fff' : '1px solid #333',
@@ -1138,11 +1134,7 @@ function TweaksPanel({ tweaks, setTweak, visible }) {
 const INITIAL_GIFTS = [
   { id: 'mug',      code: 'CC-001',                  name: 'Coffee Tumbler', blurb: 'Everyday carry. Insulated stainless steel.',   samplePlaceholder: 'CULTURE', remaining: 74 },
   { id: 'notebook', code: 'CC-002',                  name: 'Notebook',       blurb: 'Hardcover geometric. Single-lined.',            samplePlaceholder: 'CARTEL',  remaining: 18,
-    stickers: [
-      { id: 'sticker-1', name: 'Design 1', img: null },
-      { id: 'sticker-2', name: 'Design 2', img: null },
-      { id: 'sticker-3', name: 'Design 3', img: null },
-    ]
+    stickers: 'abcdefghijklmnopqrstuvwxyz'.split('').map(l => ({ id: `sticker-${l}`, name: l.toUpperCase(), img: `/images/sticker-${l}.webp` }))
   },
   { id: 'card',     code: 'CC-003',                   name: 'NETS Prepaid Card', blurb: 'For public transport and everyday expenses.', samplePlaceholder: 'YOUR NAME', remaining: 42 },
 ];
@@ -1289,7 +1281,7 @@ function App() {
   const screenMap = {
     0: <WelcomeScreen
           eventName={tweaks.eventName} venue={tweaks.venue}
-          lineCopy="A complimentary gift to mark Culture Cartel × Wicked Wallop's new partnership. Pick, customise, collect on-site — brought to you by Axxel Marketing."
+          lineCopy="A complimentary gift to mark Culture Cartel × Wicked Wallop's new partnership. Pick, customise, collect on-site — brought to you by The Gift Expert."
           onStart={() => go(1)} onStaffTap={() => setStaffOpen(true)} mobile={isPhone} />,
     1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
     2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}
