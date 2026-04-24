@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Live Customisation · The Gift Expert</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ffffff'/%3E%3Ctext x='15' y='22' font-family='Arial,sans-serif' font-size='22' font-weight='900' fill='%2329b8df' text-anchor='middle'%3Eg%3C/text%3E%3Cpath d='M7 27 C10 24 13 25.5 16 27 C19 28.5 22 27.5 25 25' stroke='%2329b8df' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"/>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -572,7 +573,7 @@ function WelcomeScreen({ onStart, eventName, venue, lineCopy, onStaffTap, mobile
           marginTop: 16, fontFamily: 'var(--mono)', fontSize: 10,
           letterSpacing: 2, textTransform: 'uppercase', color: 'var(--fg)',
         }}>
-          Culture Cartel × Wicked Wallop
+          Wicked Culture 2026
         </div>
         <div style={{ marginTop: 22, fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, maxWidth: 320 }}>
           {lineCopy}
@@ -1310,7 +1311,7 @@ function App() {
   const screenMap = {
     0: <WelcomeScreen
           eventName={tweaks.eventName} venue={tweaks.venue}
-          lineCopy="A complimentary gift to mark Culture Cartel × Wicked Wallop's new partnership. Pick, customise, collect on-site — brought to you by The Gift Expert."
+          lineCopy={<>A complimentary gift to mark Culture Cartel × Wicked Wallop's partnership. Pick, customise, collect on-site — brought to you by <em>The Gift Expert</em>.</>}
           onStart={() => go(1)} onStaffTap={() => setStaffOpen(true)} mobile={isPhone} />,
     1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
     2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}
