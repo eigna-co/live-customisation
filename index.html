@@ -459,7 +459,7 @@ function ConsentRow() {
 // Gift illustrations
 // ─────────────────────────────────────────────────────────────
 
-function GiftIllustration({ type, name = '', compact = false }) {
+function GiftIllustration({ type, name = '', compact = false, stickerImg = null }) {
   // ── IMAGE PATHS ──────────────────────────────────────────────
   // Save your images into an `images/` folder in the same repo:
   //   images/tumbler.webp  ← Coffee Tumbler
@@ -478,8 +478,8 @@ function GiftIllustration({ type, name = '', compact = false }) {
     <div style={{
       position: 'absolute', top: '50%', left: '50%',
       transform: 'translate(-50%, -50%)',
-      fontFamily: 'var(--body)', fontSize: 11, fontWeight: 400,
-      letterSpacing: 0.8, textTransform: 'uppercase',
+      fontFamily: 'Arial, sans-serif', fontSize: 11, fontWeight: 400,
+      letterSpacing: 0, textTransform: 'uppercase',
       color: 'rgba(185,180,175,0.82)',
       textShadow: '0 -1px 0 rgba(255,255,255,0.18), 0 2px 4px rgba(0,0,0,0.95)',
       pointerEvents: 'none', whiteSpace: 'nowrap',
@@ -489,17 +489,30 @@ function GiftIllustration({ type, name = '', compact = false }) {
     </div>
   );
 
-  // Other gifts: accent bar at bottom
+  // NETS card: name overlaid in the "CLUB MEMBER" zone, right-aligned
+  // Card image is 1.554:1, container is 5:4 — image fills width, ~10% letterbox top/bottom
+  // "name" row sits at ~63% of card height → ~61% of container height
   const barOverlay = showLabel && type !== 'mug' && (
     <div style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0,
-      padding: '10px 14px',
-      background: 'rgba(0,0,0,0.6)',
-      fontFamily: 'var(--display)', fontSize: 13, fontWeight: 700,
-      color: 'var(--accent)', letterSpacing: 2, textAlign: 'center',
-      textTransform: 'uppercase',
+      position: 'absolute', top: '66%', left: 0,
+      width: '37%',
+      fontFamily: 'Arial, sans-serif', fontSize: 11, fontWeight: 400,
+      color: '#e1d7b1', letterSpacing: 1, textAlign: 'right',
+      textTransform: 'uppercase', pointerEvents: 'none',
+      paddingRight: '2%',
     }}>
       {name.toUpperCase()}
+    </div>
+  );
+
+  // Notebook: sticker overlay centred on the cover
+  const stickerOverlay = stickerImg && type === 'notebook' && (
+    <div style={{
+      position: 'absolute', top: '75%', left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: '38%', pointerEvents: 'none',
+    }}>
+      <img src={stickerImg} alt="sticker" style={{ width: '100%', objectFit: 'contain', display: 'block' }} />
     </div>
   );
 
@@ -511,6 +524,7 @@ function GiftIllustration({ type, name = '', compact = false }) {
         style={{ width: '100%', height: '100%', objectFit: compact ? 'cover' : 'contain', display: 'block' }}
       />
       {engravingOverlay}
+      {stickerOverlay}
       {barOverlay}
     </div>
   );
@@ -736,7 +750,8 @@ function StickerPicker({ stickers, value, onChange }) {
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: 8, overflowY: 'auto', maxHeight: 360,
+      alignItems: 'start',
+      gap: 8, overflowY: 'auto', maxHeight: 300,
       marginBottom: 16, paddingRight: 4,
     }}>
       {stickers.map(s => {
@@ -746,10 +761,10 @@ function StickerPicker({ stickers, value, onChange }) {
             padding: 0, border: 'none', background: 'none', cursor: 'pointer',
             boxShadow: selected ? 'inset 0 0 0 2px var(--accent)' : 'inset 0 0 0 1px var(--line)',
             borderRadius: 10, overflow: 'hidden', transition: 'box-shadow .15s',
-            aspectRatio: '1', display: 'block', width: '100%',
+            aspectRatio: '1 / 1', display: 'block', width: '100%',
           }}>
             <div style={{
-              width: '100%', height: '100%', background: '#000',
+              width: '100%', height: '100%', background: 'var(--surface-2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {s.img
@@ -767,49 +782,60 @@ function StickerPicker({ stickers, value, onChange }) {
 function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, onBack, submitting, submitError, mobile }) {
   const MAX = 8;
   const isSticker = !!gift.stickers;
+  const selectedSticker = isSticker ? (gift.stickers.find(s => s.id === personalisation) || null) : null;
+  const px = mobile ? 20 : 24;
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
-      <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
-        subtitle={isSticker ? "Choose from 3 designs. We decorate on the spot." : "Up to 8 characters. We decorate on the spot."}/>
-      <div style={{
-        background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
-        marginBottom: 22, position: 'relative', overflow: 'hidden',
-      }}>
-        <GiftIllustration type={gift.id} name={isSticker ? '' : (personalisation || gift.samplePlaceholder)} />
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? `24px ${px}px 16px` : `40px ${px}px 16px` }}>
+        <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
+          subtitle={isSticker ? "Pick a letter. We sticker on the spot." : "Up to 8 characters. We decorate on the spot."}/>
         <div style={{
-          position: 'absolute', top: 12, left: 14,
-          fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
+          background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
+          marginBottom: 22, position: 'relative', overflow: 'hidden',
         }}>
-          Preview · {gift.name}
+          <GiftIllustration
+            type={gift.id}
+            name={isSticker ? '' : (personalisation || gift.samplePlaceholder)}
+            stickerImg={selectedSticker?.img || null}
+          />
+          <div style={{
+            position: 'absolute', top: 12, left: 14,
+            fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
+          }}>
+            Preview · {gift.name}
+          </div>
+          <div style={{
+            position: 'absolute', bottom: 10, right: 14,
+            fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, color: 'var(--fg-dim)',
+          }}>
+            FINAL DECORATION MAY VARY
+          </div>
         </div>
-        <div style={{
-          position: 'absolute', bottom: 10, right: 14,
-          fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, color: 'var(--fg-dim)',
-        }}>
-          FINAL DECORATION MAY VARY
-        </div>
+
+        {isSticker ? (
+          <StickerPicker stickers={gift.stickers} value={personalisation} onChange={setPersonalisation} />
+        ) : (
+          <Field
+            label="Decoration" value={personalisation}
+            onChange={v => setPersonalisation(v.slice(0, MAX))}
+            placeholder="Your name or handle" maxLength={MAX}
+            hint="Up to 8 characters. Will appear in ALL CAPS."
+          />
+        )}
       </div>
 
-      {isSticker ? (
-        <StickerPicker stickers={gift.stickers} value={personalisation} onChange={setPersonalisation} />
-      ) : (
-        <Field
-          label="Decoration" value={personalisation}
-          onChange={v => setPersonalisation(v.slice(0, MAX))}
-          placeholder="Your name or handle" maxLength={MAX}
-          hint="Up to 8 characters. Will appear in ALL CAPS."
-        />
-      )}
-
-      <div style={{ flex: 1 }} />
-      {submitError && (
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ff4d4d', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' }}>
-          {submitError}
-        </div>
-      )}
-      <Btn onClick={onNext} disabled={personalisation.trim().length === 0 || submitting}>
-        {submitting ? 'Submitting…' : 'Confirm →'}
-      </Btn>
+      {/* Sticky Confirm at bottom */}
+      <div style={{ padding: `12px ${px}px ${mobile ? 20 : 24}px`, borderTop: '1px solid var(--line)' }}>
+        {submitError && (
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ff4d4d', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' }}>
+            {submitError}
+          </div>
+        )}
+        <Btn onClick={onNext} disabled={personalisation.trim().length === 0 || submitting}>
+          {submitting ? 'Submitting…' : 'Confirm →'}
+        </Btn>
+      </div>
     </div>
   );
 }
