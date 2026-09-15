@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { handler } = require('../netlify/functions/airtable');
+const { handler, _test } = require('../netlify/functions/airtable');
 
 const VALID_REDEMPTION = {
   name: 'Jane Tan',
@@ -13,7 +13,7 @@ const VALID_REDEMPTION = {
 };
 
 function event(body, httpMethod = 'POST') {
-  return { httpMethod, body: JSON.stringify(body) };
+  return { httpMethod, body: JSON.stringify(body), headers: { 'x-forwarded-for': '203.0.113.10' } };
 }
 
 function jsonResponse(body, ok = true) {
@@ -21,6 +21,7 @@ function jsonResponse(body, ok = true) {
 }
 
 test.beforeEach(() => {
+  _test.resetRateLimit();
   process.env.AIRTABLE_TOKEN = 'test-token';
   process.env.AIRTABLE_BASE = 'test-base';
   process.env.AIRTABLE_TABLE = 'Redemptions';
@@ -48,21 +49,13 @@ test('rejects the old arbitrary proxy request without calling Airtable', async (
   assert.equal(called, false);
 });
 
-test('email checks expose only an exists boolean', async () => {
-  let requestedUrl;
-  global.fetch = async (url) => {
-    requestedUrl = url;
-    return jsonResponse({
-      records: [{ id: 'rec-secret', fields: { Email: 'jane@example.com', Phone: '+6591234567' } }],
-    });
-  };
+test('does not expose an email lookup action', async () => {
+  let called = false;
+  global.fetch = async () => { called = true; };
 
-  const response = await handler(event({ action: 'check-email', email: ' Jane@Example.com ' }));
-  assert.equal(response.statusCode, 200);
-  assert.deepEqual(JSON.parse(response.body), { exists: true });
-  assert.match(requestedUrl, /maxRecords=1/);
-  assert.match(decodeURIComponent(requestedUrl), /LOWER\(\{Email\}\)="jane@example.com"/);
-  assert.doesNotMatch(response.body, /rec-secret|91234567/);
+  const response = await handler(event({ action: 'check-email', email: 'jane@example.com' }));
+  assert.equal(response.statusCode, 400);
+  assert.equal(called, false);
 });
 
 test('rejects invalid fields before contacting Airtable', async () => {
@@ -79,6 +72,28 @@ test('rejects invalid fields before contacting Airtable', async () => {
 
   assert.equal(response.statusCode, 422);
   assert.equal(called, false);
+});
+
+test('enforces the product-specific notebook decoration rule', async () => {
+  let called = false;
+  global.fetch = async () => { called = true; };
+
+  const response = await handler(event({
+    action: 'create-redemption',
+    redemption: { ...VALID_REDEMPTION, gift: 'Notebook', decoration: 'AB' },
+  }));
+
+  assert.equal(response.statusCode, 422);
+  assert.equal(called, false);
+});
+
+test('rate limits excessive requests from one address', async () => {
+  let response;
+  for (let i = 0; i < 61; i += 1) {
+    response = await handler(event({ action: 'unknown' }));
+  }
+  assert.equal(response.statusCode, 429);
+  assert.equal(response.headers['Retry-After'], '60');
 });
 
 test('rejects a duplicate email without creating another record', async () => {
@@ -132,7 +147,7 @@ test('creates only allow-listed fields with server-controlled values', async () 
 test('returns a safe error when Airtable is unavailable', async () => {
   global.fetch = async () => { throw new Error('connection details must not leak'); };
 
-  const response = await handler(event({ action: 'check-email', email: 'jane@example.com' }));
+  const response = await handler(event({ action: 'create-redemption', redemption: VALID_REDEMPTION }));
   assert.equal(response.statusCode, 502);
   assert.deepEqual(JSON.parse(response.body), { error: 'Airtable is unavailable' });
 });
