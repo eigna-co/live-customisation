@@ -20,6 +20,8 @@
     --body: 'Inter', system-ui, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, monospace;
     --accent: #d4ff3a;
+    --accent-text: var(--accent);
+    --error: #ff7a66;
   }
 
   /* style presets */
@@ -33,11 +35,11 @@
   }
   .style-cream {
     --bg: #f5f2ec; --surface: #fffdf8; --surface-2: #ebe6dd;
-    --fg: #1a1a1a; --fg-dim: #6a6a60; --line: rgba(26,26,26,0.12);
+    --fg: #1a1a1a; --fg-dim: #6a6a60; --line: rgba(26,26,26,0.12); --accent-text: #08758c; --error: #a32614;
   }
   .style-mono {
     --bg: #fafaf7; --surface: #ffffff; --surface-2: #f0f0ec;
-    --fg: #0a0a0a; --fg-dim: #666; --line: rgba(10,10,10,0.15);
+    --fg: #0a0a0a; --fg-dim: #666; --line: rgba(10,10,10,0.15); --accent-text: #08758c; --error: #a32614;
   }
 
   html, body {
@@ -101,6 +103,10 @@
   }
   .screen { animation: fade-in .35s ease; height: 100%; }
 
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+
   button { font-family: inherit; }
   ::-webkit-scrollbar { width: 0; height: 0; }
 </style>
@@ -124,36 +130,36 @@
 </script>
 
 <script type="text/babel">
-const { useState, useEffect, useRef, useMemo, useId, Fragment } = React;
+const { useState, useEffect, useMemo, useId } = React;
 
 // ─────────────────────────────────────────────────────────────
-// Config — edit SMS_TEMPLATE to customise the message guests receive
+// Configuration
 // ─────────────────────────────────────────────────────────────
 const CONFIG = {
   // Airtable credentials are now server-side in the Netlify function — not here
-  SMS_TEMPLATE: (firstName, gift, decoration, ticket) =>
-    `Hey ${firstName} — your ${gift} with "${decoration}" is ready at the booth. Show ticket ${ticket} within 30 min.`,
   CONTACT_FORM_URL: 'https://airtable.com/appdvB1aUSC8Q0Z2T/pagDaSkn5Er5Lcuuq/form',
 };
 
 async function airtableRequest(action, payload = {}) {
-  const res = await fetch('/.netlify/functions/airtable', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, ...payload }),
-  });
-  const json = await res.json();
-  if (!res.ok) {
-    const error = new Error(json.error || 'Request failed');
-    error.status = res.status;
-    throw error;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch('/.netlify/functions/airtable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
+      signal: controller.signal,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(json.error || 'Request failed');
+      error.status = res.status;
+      throw error;
+    }
+    return json;
+  } finally {
+    clearTimeout(timeout);
   }
-  return json;
-}
-
-async function checkEmailExists(email) {
-  const json = await airtableRequest('check-email', { email });
-  return json.exists === true;
 }
 
 async function submitToAirtable(fields) {
@@ -341,7 +347,7 @@ function Tag({ children, style = {} }) {
   return (
     <span style={{
       fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.4,
-      textTransform: 'uppercase', color: 'var(--accent)',
+      textTransform: 'uppercase', color: 'var(--accent-text)',
       padding: '5px 8px', border: '1px solid var(--accent)',
       borderRadius: 3, ...style,
     }}>{children}</span>
@@ -415,7 +421,7 @@ function Field({ label, name, value, onChange, placeholder, type = 'text', hint,
         {rightAdornment && <div style={{ position: 'absolute', right: 0, top: 8 }}>{rightAdornment}</div>}
       </div>
       {hint && (
-        <div id={hintId} role={hintError ? 'alert' : undefined} style={{ marginTop: 6, fontFamily: 'var(--body)', fontSize: 12, color: hintError ? 'var(--accent)' : 'var(--fg-dim)' }}>{hint}</div>
+        <div id={hintId} role={hintError ? 'alert' : undefined} style={{ marginTop: 6, fontFamily: 'var(--body)', fontSize: 12, color: hintError ? 'var(--accent-text)' : 'var(--fg-dim)' }}>{hint}</div>
       )}
     </div>
   );
@@ -437,7 +443,7 @@ function StepHeader({ step, total, title, subtitle, onBack }) {
           {String(step).padStart(2, '0')} / {String(total).padStart(2, '0')}
         </div>
       </div>
-      <h1 style={{
+      <h1 tabIndex="-1" style={{
         fontFamily: 'var(--display)', fontSize: 34, fontWeight: 700,
         lineHeight: 1.02, letterSpacing: -1.2, color: 'var(--fg)', margin: '0 0 10px',
       }}>{title}</h1>
@@ -569,14 +575,14 @@ function WelcomeScreen({ onStart, eventName, venue, lineCopy, mobile }) {
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-        <div style={{
+        <h1 tabIndex="-1" style={{
           fontFamily: 'var(--display)', fontSize: 56, fontWeight: 800,
-          lineHeight: 0.92, letterSpacing: -2.5, color: 'var(--fg)', textTransform: 'uppercase',
+          lineHeight: 0.92, letterSpacing: -2.5, color: 'var(--fg)', textTransform: 'uppercase', margin: 0, outline: 'none',
         }}>
           Live<br/>
-          <span style={{ color: 'var(--accent)', fontStyle: 'italic', fontWeight: 500 }}>custom.</span><br/>
+          <span style={{ color: 'var(--accent-text)', fontStyle: 'italic', fontWeight: 500 }}>custom.</span><br/>
           Booth.
-        </div>
+        </h1>
         <div style={{
           marginTop: 16, fontFamily: 'var(--mono)', fontSize: 10,
           letterSpacing: 2, textTransform: 'uppercase', color: 'var(--fg)',
@@ -610,10 +616,6 @@ function WelcomeScreen({ onStart, eventName, venue, lineCopy, mobile }) {
 }
 
 function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
-  const [checking, setChecking] = useState(false);
-  const [emailError, setEmailError] = useState('');
-  const emailCache = useRef({});
-
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
   const validPhone = /^\+65[89]\d{7}$/.test(data.phone.replace(/[\s-]/g, ''));
   const valid =
@@ -621,47 +623,6 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
     data.company.trim().length > 0 &&
     validEmail &&
     validPhone;
-
-  // Silently pre-check email as user types (debounced 800ms)
-  useEffect(() => {
-    if (!validEmail) return;
-    const timer = setTimeout(async () => {
-      if (emailCache.current[data.email] !== undefined) return; // already cached
-      try {
-        const exists = await checkEmailExists(data.email);
-        emailCache.current[data.email] = exists;
-        if (exists) setEmailError('This email has already been used for a redemption.');
-      } catch { /* silent fail — will retry on Next */ }
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [data.email, validEmail]);
-
-  const handleNext = async () => {
-    setEmailError('');
-    // Use cached result if available
-    if (emailCache.current[data.email] !== undefined) {
-      if (emailCache.current[data.email]) {
-        setEmailError('This email has already been used for a redemption.');
-        return;
-      }
-      onNext();
-      return;
-    }
-    // Fallback: live check
-    setChecking(true);
-    try {
-      const exists = await checkEmailExists(data.email);
-      emailCache.current[data.email] = exists;
-      if (exists) {
-        setEmailError('This email has already been used for a redemption.');
-      } else {
-        onNext();
-      }
-    } catch {
-      setEmailError('Could not verify. Please check your connection and try again.');
-    }
-    setChecking(false);
-  };
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
@@ -675,10 +636,9 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
         <Field label="Company" name="company" autoComplete="organization" value={data.company} onChange={v => setData({ ...data, company: v })} placeholder="e.g. Hypebeast SG"/>
         <Field
           label="Company email" name="email" autoComplete="email" inputMode="email"
-          value={data.email} onChange={v => { setData({ ...data, email: v }); setEmailError(''); }}
+          value={data.email} onChange={v => setData({ ...data, email: v })}
           placeholder="you@company.com" type="email"
-          hint={emailError || 'One redemption per email address.'}
-          hintError={!!emailError}
+          hint="One redemption per email address. This is checked when you confirm."
         />
         <Field
           label="Mobile" name="phone" autoComplete="tel" inputMode="tel"
@@ -688,7 +648,7 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
         />
         <ConsentRow />
       </div>
-      <Btn onClick={handleNext} disabled={!valid || checking} style={{ flexShrink: 0 }}>
+      <Btn onClick={onNext} disabled={!valid} style={{ flexShrink: 0 }}>
         Next →
       </Btn>
     </div>
@@ -719,7 +679,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
           <div>
             <div style={{
               fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5,
-              color: selected ? 'var(--accent)' : 'var(--fg-dim)', textTransform: 'uppercase', marginBottom: 4,
+              color: selected ? 'var(--accent-text)' : 'var(--fg-dim)', textTransform: 'uppercase', marginBottom: 4,
             }}>{gift.code}</div>
             <div style={{ fontFamily: 'var(--display)', fontSize: 18, fontWeight: 700, color: 'var(--fg)', letterSpacing: -0.4, fontVariant: 'small-caps' }}>
               {gift.name}
@@ -843,7 +803,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, 
       {/* Sticky Confirm at bottom */}
       <div style={{ padding: `12px ${px}px ${mobile ? 20 : 24}px`, borderTop: '1px solid var(--line)' }}>
         {submitError && (
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ff4d4d', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' }}>
+          <div role="alert" aria-live="assertive" style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--error)', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' }}>
             {submitError}
           </div>
         )}
@@ -863,7 +823,7 @@ function TicketRow({ k, v, highlight, smallCaps }) {
         fontFamily: 'var(--display)',
         fontSize: highlight ? 16 : 14, fontWeight: highlight ? 700 : 500,
         letterSpacing: -0.2,
-        color: highlight ? 'var(--accent)' : 'var(--fg)',
+        color: highlight ? 'var(--accent-text)' : 'var(--fg)',
         textAlign: 'right',
         fontVariant: smallCaps ? 'small-caps' : 'normal',
       }}>{v}</div>
@@ -897,10 +857,10 @@ function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }
         }}>
           <span>Powered by The Gift Expert</span>
         </div>
-        <div style={{
+        <h1 tabIndex="-1" style={{
           fontFamily: 'var(--display)', fontSize: 64, fontWeight: 800,
-          lineHeight: 0.9, letterSpacing: -2.5, color: 'var(--fg)', marginBottom: 4,
-        }}>{ticket}</div>
+          lineHeight: 0.9, letterSpacing: -2.5, color: 'var(--fg)', margin: '0 0 4px', outline: 'none',
+        }}>{ticket}</h1>
         <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--fg-dim)', marginBottom: 22 }}>
           Queue no. · Keep this screen handy.
         </div>
@@ -913,7 +873,7 @@ function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }
         <TicketRow k="SMS to" v={data.phone} />
       </div>
 
-      <div style={{
+      <div role="status" aria-live="polite" style={{
         marginTop: 20, padding: '18px 20px',
         background: 'var(--surface)', color: 'var(--fg)',
         borderRadius: 14, border: '1px solid var(--line)',
@@ -938,15 +898,15 @@ function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <Tag style={{ alignSelf: 'flex-start', marginBottom: 24 }}>Collected</Tag>
-        <div style={{
+        <h1 tabIndex="-1" style={{
           fontFamily: 'var(--display)', fontSize: 48, fontWeight: 800,
-          lineHeight: 0.95, letterSpacing: -2, color: 'var(--fg)', textTransform: 'uppercase', marginBottom: 18,
+          lineHeight: 0.95, letterSpacing: -2, color: 'var(--fg)', textTransform: 'uppercase', margin: '0 0 18px', outline: 'none',
         }}>
           Thanks,<br/>
-          <span style={{ color: 'var(--accent)', fontStyle: 'italic', fontWeight: 500, textTransform: 'none' }}>
+          <span style={{ color: 'var(--accent-text)', fontStyle: 'italic', fontWeight: 500, textTransform: 'none' }}>
             {data.name.split(' ')[0]}.
           </span>
-        </div>
+        </h1>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 12 }}>
           Your <b style={{ color: 'var(--fg)', fontVariant: 'small-caps' }}>{gift.name}</b>, decorated <b style={{ color: 'var(--fg)' }}>{personalisation.toUpperCase()}</b>, has been collected.
         </div>
@@ -962,7 +922,7 @@ function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
             Bring the TGE Live Experience to your next event.
           </div>
           <a href={CONFIG.CONTACT_FORM_URL} target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.2, color: 'var(--accent)', textDecoration: 'none', textTransform: 'uppercase' }}>
+            style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: 1.2, color: 'var(--accent-text)', textDecoration: 'none', textTransform: 'uppercase' }}>
             Get in Touch →
           </a>
         </div>
@@ -1092,7 +1052,7 @@ function App() {
     const next = { ...tweaks, ...patch };
     setTweaksState(next);
     localStorage.setItem('lc.tweaks', JSON.stringify(next));
-    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*');
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, window.location.origin);
   };
 
   useEffect(() => {
@@ -1110,34 +1070,27 @@ function App() {
   const [tweaksVisible, setTweaksVisible] = useState(false);
   useEffect(() => {
     const handler = (e) => {
+      if (e.origin !== window.location.origin || e.source !== window.parent) return;
       if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
       if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
     };
     window.addEventListener('message', handler);
-    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    window.parent.postMessage({ type: '__edit_mode_available' }, window.location.origin);
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  const [step, setStep] = useState(() => Number(localStorage.getItem('lc.step') || 0));
-  const [data, setData] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('lc.data')) || { name: '', company: '', email: '', phone: '+65' }; }
-    catch { return { name: '', company: '', email: '', phone: '+65' }; }
-  });
-  const [selectedGiftId, setSelectedGiftId] = useState(() => localStorage.getItem('lc.gift') || null);
-  const [personalisation, setPersonalisation] = useState(() => localStorage.getItem('lc.pers') || '');
-  const [ticket, setTicket] = useState(() => localStorage.getItem('lc.ticket') || '');
+  const [step, setStep] = useState(0);
+  const [data, setData] = useState({ name: '', company: '', email: '', phone: '+65' });
+  const [selectedGiftId, setSelectedGiftId] = useState(null);
+  const [personalisation, setPersonalisation] = useState('');
+  const [ticket, setTicket] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  useEffect(() => localStorage.setItem('lc.step', step), [step]);
-  useEffect(() => localStorage.setItem('lc.data', JSON.stringify(data)), [data]);
   useEffect(() => {
     if (selectedGiftId) {
-      localStorage.setItem('lc.gift', selectedGiftId);
       setPersonalisation(''); // reset when gift changes
     }
   }, [selectedGiftId]);
-  useEffect(() => localStorage.setItem('lc.pers', personalisation), [personalisation]);
-  useEffect(() => { if (ticket) localStorage.setItem('lc.ticket', ticket); }, [ticket]);
 
   const gifts = useMemo(() => INITIAL_GIFTS.map(g => ({
     ...g,
@@ -1147,7 +1100,6 @@ function App() {
 
   const go = (s) => setStep(s);
   const restart = () => {
-    ['lc.step','lc.data','lc.gift','lc.pers','lc.ticket'].forEach(k => localStorage.removeItem(k));
     setData({ name: '', company: '', email: '', phone: '+65' });
     setSelectedGiftId(null);
     setPersonalisation('');
@@ -1155,6 +1107,28 @@ function App() {
     setSubmitError('');
     setStep(0);
   };
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => document.querySelector('.screen h1')?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [step]);
+
+  useEffect(() => {
+    if (step === 0 || step === 4) return;
+    const timeoutMs = step === 5 ? 60_000 : 10 * 60_000;
+    let timeout;
+    const resetTimer = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(restart, timeoutMs);
+    };
+    const events = ['pointerdown', 'keydown', 'touchstart'];
+    events.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
+    resetTimer();
+    return () => {
+      clearTimeout(timeout);
+      events.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
+    };
+  }, [step]);
 
   const submitRedemption = async () => {
     setSubmitting(true);
@@ -1173,9 +1147,11 @@ function App() {
       setTicket(result.ticket);
       setStep(4);
     } catch (error) {
-      setSubmitError(error.status === 409
-        ? 'This email has already been used for a redemption.'
-        : 'Submission failed. Please check your connection and try again.');
+      if (error.status === 409) setSubmitError('This email has already been used for a redemption.');
+      else if (error.status === 429) setSubmitError('The service is busy. Please wait a minute and try again.');
+      else if (error.status === 422) setSubmitError('Please check your details and personalisation, then try again.');
+      else if (error.name === 'AbortError') setSubmitError('The request timed out. Please check your connection and try again.');
+      else setSubmitError('Submission failed. Please check your connection and try again.');
     }
     setSubmitting(false);
   };
