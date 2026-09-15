@@ -6,11 +6,15 @@ const JSON_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
 };
 
-const ALLOWED_GIFTS = new Set([
-  'coffee tumbler',
-  'notebook',
-  'nets prepaid card',
+const GIFT_RULES = new Map([
+  ['coffee tumbler', (decoration) => decoration.length <= 8],
+  ['notebook', (decoration) => /^[A-Z]$/.test(decoration)],
+  ['nets prepaid card', (decoration) => decoration.length <= 8],
 ]);
+
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT = 60;
+const requestLog = new Map();
 
 function reply(statusCode, body, extraHeaders = {}) {
   return {
@@ -52,6 +56,36 @@ function emailQuery(email) {
   return params.toString();
 }
 
+function clientAddress(event) {
+  return event.headers?.['x-nf-client-connection-ip']
+    || event.headers?.['x-forwarded-for']?.split(',')[0]?.trim()
+    || 'unknown';
+}
+
+function isRateLimited(event, now = Date.now()) {
+  let key = clientAddress(event);
+  if (!requestLog.has(key) && requestLog.size >= 1_000) {
+    for (const [address, timestamps] of requestLog) {
+      if (!timestamps.some((timestamp) => now - timestamp < RATE_WINDOW_MS)) requestLog.delete(address);
+    }
+    if (requestLog.size >= 1_000) key = 'overflow';
+  }
+  const recent = (requestLog.get(key) || []).filter((timestamp) => now - timestamp < RATE_WINDOW_MS);
+  recent.push(now);
+  requestLog.set(key, recent);
+  return recent.length > RATE_LIMIT;
+}
+
+async function airtableFetch(url, options) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function makeTicket() {
   return `CC·${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
 }
@@ -66,7 +100,8 @@ function validateRedemption(payload) {
   const gift = cleanText(payload.gift, 80)?.toLowerCase();
   const decoration = cleanText(payload.decoration, 8)?.toUpperCase();
 
-  if (!name || !company || !email || !phone || !gift || !decoration || !ALLOWED_GIFTS.has(gift)) {
+  const decorationRule = gift ? GIFT_RULES.get(gift) : null;
+  if (!name || !company || !email || !phone || !gift || !decoration || !decorationRule?.(decoration)) {
     return null;
   }
 
@@ -80,6 +115,10 @@ exports.handler = async (event) => {
 
   if (!event.body || event.body.length > 10_000) {
     return reply(400, { error: 'Invalid request' });
+  }
+
+  if (isRateLimited(event)) {
+    return reply(429, { error: 'Too many requests. Please wait and try again.' }, { 'Retry-After': '60' });
   }
 
   let request;
@@ -104,22 +143,11 @@ exports.handler = async (event) => {
   };
 
   try {
-    if (request.action === 'check-email') {
-      const email = normaliseEmail(request.email);
-      if (!email) return reply(422, { error: 'Invalid email' });
-
-      const response = await fetch(`${airtableUrl}?${emailQuery(email)}`, { headers });
-      if (!response.ok) return reply(502, { error: 'Unable to check redemption' });
-
-      const data = await response.json();
-      return reply(200, { exists: Array.isArray(data.records) && data.records.length > 0 });
-    }
-
     if (request.action === 'create-redemption') {
       const redemption = validateRedemption(request.redemption);
       if (!redemption) return reply(422, { error: 'Invalid redemption details' });
 
-      const duplicateResponse = await fetch(`${airtableUrl}?${emailQuery(redemption.email)}`, { headers });
+      const duplicateResponse = await airtableFetch(`${airtableUrl}?${emailQuery(redemption.email)}`, { headers });
       if (!duplicateResponse.ok) return reply(502, { error: 'Unable to verify redemption' });
 
       const duplicateData = await duplicateResponse.json();
@@ -128,7 +156,7 @@ exports.handler = async (event) => {
       }
 
       const ticket = makeTicket();
-      const response = await fetch(airtableUrl, {
+      const response = await airtableFetch(airtableUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -159,5 +187,7 @@ exports._test = {
   emailQuery,
   normaliseEmail,
   normalisePhone,
+  isRateLimited,
+  resetRateLimit: () => requestLog.clear(),
   validateRedemption,
 };
