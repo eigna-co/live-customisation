@@ -5,7 +5,7 @@ const { createQueueHandler, paths, digest } = require('../firebase-functions/que
 const { syncOrder } = require('../firebase-functions/airtable-mirror');
 const { _test } = require('../firebase-functions/redemption');
 const { fakeDb } = require('./fake-db');
-const details = (email = 'guest@example.test') => ({ name: 'Jane Tan', company: 'Example', email, phone: '+65 9123 4567', gift: 'Travel Adaptor', decoration: 'Jane', decorationBottom: 'Mark', font: 'segoe-print' });
+const details = (email = 'guest@example.test') => ({ name: 'Jane Tan', company: 'Example', email, phone: '+65 9123 4567', gift: 'Travel Adaptor', decoration: 'Jane', font: 'segoe-print' });
 function setup() {
   _test.resetRateLimit();
   const db = fakeDb();
@@ -72,17 +72,17 @@ test('staff changes are ordered, conflict-checked and audited; tracking exposes 
   assert.equal((await call('get-order-status', { trackingToken: receipt.ticket })).httpStatus, 404);
 });
 const mirrorEnv = { AIRTABLE_TOKEN: 'test', AIRTABLE_BASE: 'base', AIRTABLE_TABLE: 'table' };
-test('both engraving areas accept five letters independently and persist their positions', async () => {
+test('top-only engraving accepts five letters and saves only customer text', async () => {
   const { db, call } = setup();
-  const result = await call('create-redemption', { requestId: randomUUID(), redemption: { ...details(), decoration: 'ABCDE', decorationBottom: 'FGHIJ' } });
+  const result = await call('create-redemption', { requestId: randomUUID(), redemption: { ...details(), decoration: 'ABCDE' } });
   assert.equal(result.httpStatus, 201);
   const order = db.rows.get(`${paths.root}/orders/${digest('guest@example.test')}`);
-  assert.equal(order.decorationTop, 'ABCDE'); assert.equal(order.decorationBottom, 'FGHIJ');
-  assert.equal(order.decoration, 'Top: ABCDE | Bottom: FGHIJ');
+  assert.equal(order.decorationBottom, undefined);
+  assert.equal(order.decoration, 'ABCDE');
 });
-test('missing, blank, invalid and overlong bottom engraving are rejected before reserving stock', async () => {
+test('any submitted bottom engraving is rejected before reserving stock', async () => {
   const { db, call } = setup();
-  for (const bottom of [undefined, '', 'ABCDEF', '123', 'A B']) {
+  for (const bottom of [null, '', 'ABCDE', 'ABCDEF', '123', 'A B']) {
     assert.equal((await call('create-redemption', { requestId: randomUUID(), redemption: { ...details(), decorationBottom: bottom } })).httpStatus, 422);
   }
   assert.equal(db.rows.size, 0);

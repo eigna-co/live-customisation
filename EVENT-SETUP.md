@@ -11,9 +11,9 @@ Configured from supplied requirements:
   numbers and symbols are rejected. Letter casing is preserved. International
   letters are accepted; any narrower character or word restrictions are pending.
 - Times New Roman, Segoe Print and Lucida Sans Regular.
-- Separate personalised text above AND below the front socket, maximum five
-  letters per area. Both fields are required in the new queue service.
-  The current font selector applies the chosen font to both areas.
+- Customer personalisation above the front socket only, maximum five letters.
+  The bottom already has a fixed pre-engraved Nuvei logo. No bottom text is accepted.
+  The font selector applies only to the customer's top text.
 - Inter Tight website typography, one of the two requested website fonts.
 
 The product card and preview use an AI-retouched studio version of the supplied
@@ -21,7 +21,9 @@ front-facing photo, displayed through an SVG viewport with separate text overlay
 Original brochure and front photo remain unmodified in images/. The retouched
 asset is a website visual only, not an exact engineering or production reference.
 Text size and positioning are approximate, not a production engraving proof.
-No Nuvei logo replaces the bottom personalisation. Exact font rendering depends on fonts installed on
+The preview represents the fixed grey Nuvei logo below the socket with an approximate wordmark;
+approved logo artwork and a photograph of the pre-engraved front are still needed for an exact proof.
+Exact font rendering depends on fonts installed on
 the guest's device. Licensed web font files and matching production fonts are
 needed before approving the proof. No fonts were copied from Windows or bundled.
 
@@ -41,8 +43,8 @@ Use the separate event table. Required fields:
 `Name`, `Company`, `Email`, `Phone`, `Gift`, `Decoration`, `Font`, `Ticket`, `Status`.
 Use an ordinary text field for `Font`; it stores only the selected font name for
 the engraving team. Airtable's display typeface has no effect on engraving.
-`Decoration` stores both locations explicitly, e.g. `Top: ABCDE | Bottom: FGHIJ`.
-Firestore additionally stores separate top and bottom strings. No new Airtable
+`Decoration` stores the customer's top text only, e.g. `ABCDE`.
+The pre-engraved logo is not a customer preference. No new Airtable
 columns are needed for this change.
 Allow `travel adaptor` in `Gift` and `Queued`, `Decorating`, `Ready`, `Collected`
 in `Status` if using single-select.

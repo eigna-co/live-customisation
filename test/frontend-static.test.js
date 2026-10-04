@@ -7,6 +7,13 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.jsx'), 'utf8');
 const netlifyConfig = fs.readFileSync(path.join(__dirname, '..', 'netlify.toml'), 'utf8');
 
+test('Nuvei personalisation exposes only top text and a fixed logo below', () => {
+  assert.doesNotMatch(source, /bottomPersonalisation|bottomName|DecorationBottom|label="Bottom engraving"|both areas/);
+  assert.match(source, /label="Top engraving"/);
+  assert.match(source, /Pre-engraved Nuvei logo/);
+  assert.match(source, /Engraving font · top personalisation/);
+});
+
 test('does not ship the old client-side staff password or panel', () => {
   assert.doesNotMatch(source, /STAFF_PASSWORD|StaffPanel|onStaffTap|type="password"/);
 });

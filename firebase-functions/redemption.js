@@ -98,16 +98,13 @@ function validateRedemption(payload) {
   const gift = cleanText(payload.gift, 80)?.toLowerCase();
   const product = PRODUCTS.get(gift);
   const personalisation = validatePersonalisation(product, payload.decoration, payload.font);
-  const hasBottom = Object.hasOwn(payload, 'decorationBottom');
-  const bottom = hasBottom ? validatePersonalisation(product, payload.decorationBottom, payload.font) : null;
-  if (hasBottom && !bottom) return null;
+  if (Object.hasOwn(payload, 'decorationBottom')) return null;
   if (!name || !company || !email || !phone || !gift || !personalisation) {
     return null;
   }
 
   return { name, company, email, phone, gift,
-    decoration: bottom ? `Top: ${personalisation.decoration} | Bottom: ${bottom.decoration}` : personalisation.decoration,
-    ...(bottom ? { decorationTop: personalisation.decoration, decorationBottom: bottom.decoration } : {}),
+    decoration: personalisation.decoration,
     font: personalisation.font.name };
 }
 

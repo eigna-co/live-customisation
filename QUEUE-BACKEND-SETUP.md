@@ -73,4 +73,4 @@ the isolated preview with sample data only.
 
 Staff page: existing site address plus `?staff=1`. Session tokens stay in memory,
 expire, and are cleared on sign-out. No production staff credentials are bundled.
-Top/bottom engraving is now implemented with five letters per area; see EVENT-SETUP.md.
+Top-only engraving is implemented with five letters; the bottom has a fixed pre-engraved Nuvei logo. See EVENT-SETUP.md.

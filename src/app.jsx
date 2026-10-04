@@ -55,7 +55,6 @@ async function submitToAirtable(fields, requestId) {
       phone: fields.Phone,
       gift: fields.Gift,
       decoration: fields.Decoration,
-      ...(fields.DecorationBottom !== undefined ? { decorationBottom: fields.DecorationBottom } : {}),
       font: fields.Font,
     },
   });
@@ -370,21 +369,21 @@ function ConsentRow() {
 // Gift illustrations
 // ─────────────────────────────────────────────────────────────
 
-function GiftIllustration({ type, name = '', bottomName = '', compact = false, stickerImg = null, font }) {
+function GiftIllustration({ type, name = '', compact = false, stickerImg = null, font }) {
   const configuredProduct = EVENT.products.find(product => product.id === type);
   if (configuredProduct) {
     return (
       <div style={{ height: '100%', background: '#FAF9F8', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: name ? '26px 12px 30px' : 4, boxSizing: 'border-box' }}>
         {name ? (
-          <svg viewBox="30 100 880 1370" role="img" aria-label={`Retouched adaptor photo preview: ${name} at the top, ${bottomName || 'bottom text'} at the bottom`} style={{ width: '100%', height: '100%', maxHeight: 290 }}>
+          <svg viewBox="30 100 880 1370" role="img" aria-label={`Adaptor preview: ${name} at the top, fixed pre-engraved Nuvei logo below`} style={{ width: '100%', height: '100%', maxHeight: 290 }}>
             <image href="/images/nuvei-adaptor-studio.png" x="0" y="0" width="941" height="1672" />
             <text x="470" y="350" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: font?.css, fontSize: 70 }}>{name}</text>
-            <text x="470" y="1230" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: font?.css, fontSize: 70 }}>{bottomName || 'Alex'}</text>
+            <text x="470" y="1230" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: 'Arial, sans-serif', fontWeight: 700, fontStyle: 'italic', fontSize: 86, letterSpacing: -4 }}>nuvei</text>
           </svg>
         ) : (
           <img src={configuredProduct.image} alt="Black Nuvei travel adaptor reference" style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }} />
         )}
-        {name && <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 }}>Product preview · Top and bottom engraving</div>}
+        {name && <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 }}>Product preview · Personalised top · Pre-engraved Nuvei logo below</div>}
       </div>
     );
   }
@@ -658,12 +657,11 @@ function StickerPicker({ stickers, value, onChange }) {
   );
 }
 
-function PersonaliseScreen({ gift, personalisation, setPersonalisation, bottomPersonalisation, setBottomPersonalisation, fontId, setFontId, onNext, onBack, submitting, submitError, mobile }) {
+function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, setFontId, onNext, onBack, submitting, submitError, mobile }) {
   const MAX = gift.personalisation.maxLetters;
   const selectedFont = gift.personalisation.fonts.find(font => font.id === fontId);
   const topValid = !!validatePersonalisation(gift, personalisation, fontId);
-  const bottomValid = !!validatePersonalisation(gift, bottomPersonalisation, fontId);
-  const valid = topValid && bottomValid;
+  const valid = topValid;
   const isSticker = !!gift.stickers;
   const selectedSticker = isSticker ? (gift.stickers.find(s => s.id === personalisation) || null) : null;
   const px = mobile ? 20 : 24;
@@ -672,7 +670,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, bottomPe
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? `24px ${px}px 16px` : `40px ${px}px 16px` }}>
         <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
-          subtitle={`Top and bottom of the front socket face. Up to ${MAX} letters per area.`}/>
+          subtitle={`Personalise the top with up to ${MAX} letters. The Nuvei logo is already engraved below.`}/>
         <div style={{
           background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
           marginBottom: 22, position: 'relative', overflow: 'hidden',
@@ -680,7 +678,6 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, bottomPe
           <GiftIllustration
             type={gift.id}
             name={isSticker ? '' : (personalisation || gift.samplePlaceholder)}
-            bottomName={bottomPersonalisation || 'Alex'}
             stickerImg={selectedSticker?.img || null}
             font={selectedFont}
           />
@@ -708,15 +705,10 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, bottomPe
             hint={`Maximum ${MAX} letters. No spaces, numbers or symbols. Uppercase and lowercase are preserved.`}
             hintError={personalisation.length > 0 && !topValid}
           />
-          <Field
-            label="Bottom engraving" name="decoration-bottom" autoComplete="off" value={bottomPersonalisation}
-            onChange={setBottomPersonalisation} placeholder="e.g. Alex" maxLength={MAX}
-            hint={`Maximum ${MAX} letters in the bottom area. No spaces, numbers or symbols.`}
-            hintError={bottomPersonalisation.length > 0 && !bottomValid}
-          /></>
+          </>
         )}
         <fieldset style={{ border: 0, padding: 0, margin: '8px 0 16px' }}>
-          <legend style={{ fontSize: 13, marginBottom: 10 }}>Engraving font · both areas</legend>
+          <legend style={{ fontSize: 13, marginBottom: 10 }}>Engraving font · top personalisation</legend>
           {gift.personalisation.fonts.map(font => (
             <label key={font.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', fontFamily: font.css }}>
               <input type="radio" name="engraving-font" value={font.id} checked={fontId === font.id} onChange={() => setFontId(font.id)} />
@@ -758,7 +750,7 @@ function TicketRow({ k, v, highlight, smallCaps }) {
   );
 }
 
-function TicketScreen({ ticket, gift, personalisation, bottomPersonalisation, fontId, data, onCollect, mobile, trackingToken }) {
+function TicketScreen({ ticket, gift, personalisation, fontId, data, onCollect, mobile, trackingToken }) {
   const [status, setStatus] = useState('Queued');
   const [offline, setOffline] = useState(false);
   useEffect(() => {
@@ -808,7 +800,7 @@ function TicketScreen({ ticket, gift, personalisation, bottomPersonalisation, fo
         <TicketRow k="Top" v={(gift.stickers
           ? (gift.stickers.find(s => s.id === personalisation)?.name ?? personalisation)
           : personalisation) || '—'} highlight />
-        <TicketRow k="Bottom" v={bottomPersonalisation || '—'} highlight />
+        <TicketRow k="Bottom" v="Pre-engraved Nuvei logo" />
         <TicketRow k="Font" v={gift.personalisation.fonts.find(font => font.id === fontId)?.name} />
         <TicketRow k="For" v={data.name} />
         <TicketRow k="Contact" v={data.phone} />
@@ -834,7 +826,7 @@ function TicketScreen({ ticket, gift, personalisation, bottomPersonalisation, fo
   );
 }
 
-function DoneScreen({ onRestart, data, gift, personalisation, bottomPersonalisation, mobile }) {
+function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -849,7 +841,7 @@ function DoneScreen({ onRestart, data, gift, personalisation, bottomPersonalisat
           </span>
         </h1>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 12 }}>
-          Your order for a <b style={{ color: 'var(--fg)' }}>{gift.name}</b>, personalised with <b style={{ color: 'var(--fg)' }}>{personalisation}</b> at the top and <b style={{ color: 'var(--fg)' }}>{bottomPersonalisation}</b> at the bottom, has been saved. Please check with the event team before collecting.
+          Your order for a <b style={{ color: 'var(--fg)' }}>{gift.name}</b>, personalised with <b style={{ color: 'var(--fg)' }}>{personalisation}</b> at the top, has been saved. The bottom has a pre-engraved Nuvei logo. Please check with the event team before collecting.
         </div>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 30 }}>
           Show it off. Tag{' '}
@@ -1022,7 +1014,6 @@ function App() {
   const [data, setData] = useState({ name: '', company: '', email: '', phone: '+65' });
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [personalisation, setPersonalisation] = useState('');
-  const [bottomPersonalisation, setBottomPersonalisation] = useState('');
   const [fontId, setFontId] = useState(EVENT.products[0].personalisation.fonts[0].id);
   const submissionInFlight = useRef(false);
   const retryRequest = useRef(null);
@@ -1033,7 +1024,6 @@ function App() {
   useEffect(() => {
     if (selectedGiftId) {
       setPersonalisation(''); // reset when gift changes
-      setBottomPersonalisation('');
       setFontId(EVENT.products.find(product => product.id === selectedGiftId).personalisation.fonts[0].id);
     }
   }, [selectedGiftId]);
@@ -1067,7 +1057,6 @@ function App() {
     setData({ name: '', company: '', email: '', phone: '+65' });
     setSelectedGiftId(null);
     setPersonalisation('');
-    setBottomPersonalisation('');
     setFontId(EVENT.products[0].personalisation.fonts[0].id);
     setTicket('');
     setTrackingToken('');
@@ -1100,8 +1089,7 @@ function App() {
 
   const submitRedemption = async () => {
     const validated = validatePersonalisation(selectedGift, personalisation, fontId);
-    const validatedBottom = validatePersonalisation(selectedGift, bottomPersonalisation, fontId);
-    if (submissionInFlight.current || !validated || !validatedBottom) return;
+    if (submissionInFlight.current || !validated) return;
     submissionInFlight.current = true;
     setSubmitting(true);
     setSubmitError('');
@@ -1113,7 +1101,6 @@ function App() {
         Phone:      data.phone,
         Gift:       selectedGift.name.toLowerCase(),
         Decoration: validated.decoration,
-        DecorationBottom: validatedBottom.decoration,
         Font: fontId,
       };
       const fingerprint = JSON.stringify(fields);
@@ -1123,7 +1110,6 @@ function App() {
       setTrackingToken(result.trackingToken);
       refreshInventory();
       setPersonalisation(validated.decoration);
-      setBottomPersonalisation(validatedBottom.decoration);
       setStep(4);
     } catch (error) {
       if (error.code === 'sold-out') { setSubmitError('This gift has sold out. Please ask the event team.'); refreshInventory(); }
@@ -1141,23 +1127,21 @@ function App() {
   const screenMap = {
     0: <WelcomeScreen
           eventName={tweaks.eventName} venue={tweaks.venue}
-          lineCopy={<>Personalise the top and bottom of your Nuvei travel adaptor with up to five letters per area. Choose an engraving font and collect on-site with <em>The Gift Expert</em>.</>}
+          lineCopy={<>Personalise the top of your Nuvei travel adaptor with up to five letters. The Nuvei logo is already engraved below. Choose an engraving font and collect on-site with <em>The Gift Expert</em>.</>}
           onStart={() => go(1)} mobile={isPhone} />,
     1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
     2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}
           inventoryError={inventoryError} onRefresh={refreshInventory}
           showInventory={tweaks.showInventory} onNext={() => go(3)} onBack={() => go(1)} mobile={isPhone} />,
     3: <PersonaliseScreen gift={selectedGift} personalisation={personalisation}
-          bottomPersonalisation={bottomPersonalisation} setBottomPersonalisation={setBottomPersonalisation}
           fontId={fontId} setFontId={setFontId}
           setPersonalisation={setPersonalisation} onNext={submitRedemption} onBack={() => go(2)}
           submitting={submitting} submitError={submitError} mobile={isPhone} />,
     4: <TicketScreen ticket={ticket} gift={selectedGift} personalisation={personalisation}
-          bottomPersonalisation={bottomPersonalisation}
           trackingToken={trackingToken}
           fontId={fontId}
           data={data} onCollect={() => go(5)} mobile={isPhone} />,
-    5: <DoneScreen data={data} gift={selectedGift} personalisation={personalisation} bottomPersonalisation={bottomPersonalisation} onRestart={restart} mobile={isPhone} />,
+    5: <DoneScreen data={data} gift={selectedGift} personalisation={personalisation} onRestart={restart} mobile={isPhone} />,
   };
 
   const showPips = step >= 1 && step <= 3;

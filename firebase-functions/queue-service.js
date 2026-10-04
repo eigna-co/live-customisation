@@ -25,7 +25,7 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
 
   async function createOrder(request) {
     if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(request.requestId || '')) fail(422, 'Invalid request reference.');
-    if (typeof request.redemption?.decorationBottom !== 'string') fail(422, 'Enter the bottom engraving text.');
+    if (Object.hasOwn(request.redemption || {}, 'decorationBottom')) fail(422, 'Only the top area can be personalised. The bottom has a pre-engraved Nuvei logo.');
     const details = validation.validateRedemption(request.redemption);
     if (!details) fail(422, 'Invalid redemption details.');
     const product = config.products.find(product => product.name.toLowerCase() === details.gift);

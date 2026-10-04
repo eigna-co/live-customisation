@@ -25,8 +25,8 @@
       "maxLetters": 5,
       "lettersOnly": true,
       "preserveCase": true,
-      "location": "Front, above and below the three-pin socket",
-      "areas": ["top", "bottom"],
+      "location": "Front, above the three-pin socket; fixed pre-engraved Nuvei logo below",
+      "areas": ["top"],
       "fonts": [
         {"id": "times-new-roman", "name": "Times New Roman", "css": "'Times New Roman', serif"},
         {"id": "segoe-print", "name": "Segoe Print", "css": "'Segoe Print', cursive"},
