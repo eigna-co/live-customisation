@@ -21,8 +21,10 @@ front-facing photo, displayed through an SVG viewport with separate text overlay
 Original brochure and front photo remain unmodified in images/. The retouched
 asset is a website visual only, not an exact engineering or production reference.
 Text size and positioning are approximate, not a production engraving proof.
-The preview represents the fixed grey Nuvei logo below the socket with an approximate wordmark;
-approved logo artwork and a photograph of the pre-engraved front are still needed for an exact proof.
+The preview uses the actual Nuvei wordmark from the supplied product reference, cropped
+through SVG and recoloured grey without modifying the source image. Its width is approximately
+38% of the front face, centred below the socket. Final physical size and placement still
+need a production proof; a photograph of the pre-engraved front would confirm the match.
 Exact font rendering depends on fonts installed on
 the guest's device. Licensed web font files and matching production fonts are
 needed before approving the proof. No fonts were copied from Windows or bundled.

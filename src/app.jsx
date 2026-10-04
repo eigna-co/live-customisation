@@ -378,7 +378,16 @@ function GiftIllustration({ type, name = '', compact = false, stickerImg = null,
           <svg viewBox="30 100 880 1370" role="img" aria-label={`Adaptor preview: ${name} at the top, fixed pre-engraved Nuvei logo below`} style={{ width: '100%', height: '100%', maxHeight: 290 }}>
             <image href="/images/nuvei-adaptor-studio.png" x="0" y="0" width="941" height="1672" />
             <text x="470" y="350" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: font?.css, fontSize: 70 }}>{name}</text>
-            <text x="470" y="1230" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: 'Arial, sans-serif', fontWeight: 700, fontStyle: 'italic', fontSize: 86, letterSpacing: -4 }}>nuvei</text>
+            <svg x="315" y="1170" width="310" height="123" viewBox="548 178 96 38" aria-label="Fixed Nuvei wordmark">
+              <defs>
+                <filter id="nuvei-wordmark-grey" colorInterpolationFilters="sRGB">
+                  <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.2126 -0.7152 -0.0722 0 1" result="ink" />
+                  <feFlood floodColor="#b9b9b9" />
+                  <feComposite in2="ink" operator="in" />
+                </filter>
+              </defs>
+              <image href="/images/nuvei-adaptor-reference.png" x="0" y="0" width="732" height="372" filter="url(#nuvei-wordmark-grey)" />
+            </svg>
           </svg>
         ) : (
           <img src={configuredProduct.image} alt="Black Nuvei travel adaptor reference" style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }} />
