@@ -8,7 +8,7 @@ exports.createHttpHandler = (handler) => async (req, res) => {
     body,
     // Never forward user-supplied Netlify headers on the Firebase endpoint.
     clientAddress: req.ip || req.socket?.remoteAddress || 'unknown',
-    headers: {},
+    headers: req.headers?.authorization ? { authorization: req.headers.authorization } : {},
   });
   res.set(result.headers);
   res.status(result.statusCode).send(result.body);

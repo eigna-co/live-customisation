@@ -32,7 +32,8 @@ test('exposes product and sticker selection state to assistive technology', () =
 
 test('shows a specific message for duplicate submission responses', () => {
   assert.match(source, /error\.status === 409/);
-  assert.match(source, /This email has already been used for a redemption\./);
+  assert.match(source, /error\.code === 'duplicate-email'/);
+  assert.match(source, /This email has already been used\./);
 });
 
 test('does not persist guest details or tickets in browser storage', () => {

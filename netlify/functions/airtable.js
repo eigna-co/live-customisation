@@ -1,2 +1,2 @@
-// Keep Netlify operational while Firebase is prepared and verified.
-module.exports = require('../../firebase-functions/redemption');
+// Old links use the same secured service; never retain an unprotected legacy path.
+module.exports = require('./queue');

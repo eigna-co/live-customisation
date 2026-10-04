@@ -109,6 +109,17 @@
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   }
 
+  .staff-screen { position: fixed; inset: 0; overflow: auto; background: #FAF9F8; color: #160850; padding: 24px; font-family: var(--body), sans-serif; box-sizing: border-box; }
+  .staff-screen header, .staff-screen > * { max-width: 1000px; margin-left: auto; margin-right: auto; }
+  .staff-screen button { background: #0C98D3; color: #160850; border: 1px solid #160850; border-radius: 8px; padding: 12px 16px; cursor: pointer; margin: 4px; }
+  .staff-screen button:disabled { opacity: .5; cursor: wait; }
+  .staff-screen label { display: block; margin: 12px 0; }
+  .staff-screen input, .staff-screen select { display: block; padding: 12px; border: 1px solid #160850; border-radius: 6px; width: 100%; box-sizing: border-box; background: white; color: #160850; font: inherit; }
+  .staff-login { max-width: 420px; }
+  .staff-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .staff-orders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+  .staff-orders article { padding: 20px; border: 1px solid #CFC9C2; border-radius: 12px; background: white; overflow-wrap: anywhere; }
+  .staff-screen [role=alert] { padding: 12px; border: 2px solid #160850; }
   button { font-family: inherit; }
   ::-webkit-scrollbar { width: 0; height: 0; }
 </style>

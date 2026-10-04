@@ -1,0 +1,7 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Orders and stock are accessed only by the authenticated server service.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

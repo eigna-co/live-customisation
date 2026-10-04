@@ -59,6 +59,6 @@ test('Firebase adapter and shared service reject non-POST, invalid JSON and null
   }
 });
 
-test('Netlify and Firebase use exactly the same order service', () => {
-  assert.equal(require('../netlify/functions/airtable').handler, handler);
+test('legacy Netlify endpoint cannot bypass the secured queue proxy', () => {
+  assert.equal(require('../netlify/functions/airtable').handler, require('../netlify/functions/queue').handler);
 });

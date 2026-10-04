@@ -1,10 +1,11 @@
 [build]
+  command = "node scripts/build-firebase.mjs"
   functions = "netlify/functions"
-  publish = "."
+  publish = "dist"
 
 [[redirects]]
   from = "/api/redemptions"
-  to = "/.netlify/functions/airtable"
+  to = "/.netlify/functions/queue"
   status = 200
 
 [[headers]]
@@ -19,4 +20,4 @@
 [[headers]]
   for = "/images/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=3600, must-revalidate"

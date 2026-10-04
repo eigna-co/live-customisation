@@ -1,4 +1,9 @@
-# Firebase migration preparation
+# Earlier Firebase migration notes (superseded)
+
+These earlier notes describe the initial hosting-only proposal, NOT the current
+code. In particular, the statements below that Firestore is unnecessary and
+atomic stock/staff controls are missing are now obsolete. Follow
+QUEUE-BACKEND-SETUP.md for the current architecture and deployment checklist.
 
 Status: local preparation only. No project created, billing enabled, secrets copied,
 live orders submitted or deployment performed.

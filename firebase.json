@@ -5,6 +5,7 @@
     "runtime": "nodejs22",
     "ignore": ["node_modules", ".git", "*.log", ".env*", ".secret.local"]
   }],
+  "firestore": { "rules": "firestore.rules" },
   "hosting": {
     "public": "dist",
     "predeploy": ["node scripts/build-firebase.mjs"],
@@ -28,6 +29,8 @@
   "emulators": {
     "functions": {"port": 5001},
     "hosting": {"port": 5000},
+    "firestore": {"port": 8080},
+    "auth": {"port": 9099},
     "singleProjectMode": true
   }
 }

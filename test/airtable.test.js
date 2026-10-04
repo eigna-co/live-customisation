@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { handler, _test } = require('../netlify/functions/airtable');
+const { handler, _test } = require('../firebase-functions/redemption');
 
 const VALID_REDEMPTION = {
   name: 'Jane Tan',
