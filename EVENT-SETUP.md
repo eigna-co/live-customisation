@@ -14,22 +14,29 @@ Configured from supplied requirements:
 - Personalisation above the front three-pin socket, logo below.
 - Inter Tight website typography, one of the two requested website fonts.
 
-The supplied product reference image is included unmodified. The name preview
-shows the selected text and font next to that reference; it is not a production
-engraving proof. Exact font rendering currently depends on fonts installed on
+The supplied product reference image is included unmodified on the product card.
+The placement illustration shows the selected text above the front socket and
+the Nuvei label below, following the confirmed top/bottom placement. It is not a
+production engraving proof or the final logo artwork. Exact font rendering currently depends on fonts installed on
 the guest's device. Licensed web font files and matching production fonts are
 needed before approving the proof. No fonts were copied from Windows or bundled.
 
-The existing website colours remain provisional. Supply official HEX values and
-the Nuvei logo file before finalising branding and the foamboard artwork. The
-font size, physical placement template and whether 100 units is shared across
-both dates also remain to be confirmed.
+The website now uses the official primary palette from Nuvei ANZ Partner Brand
+Guidelines v.01, page 12: Signal Blue #0C98D3, Core Navy #160850, Warm White #FAF9F8,
+and Support Grey #CFC9C2. These replace the photograph-derived approximations.
+The guide is linked from https://www.nuvei.com/partner-marketing-kit/anz and its
+document URL is recorded in event-config.json. Navy text on blue buttons preserves
+contrast; small text uses navy rather than blue on white. The client-approved visual direction and
+front top/bottom placement are sufficient for the website draft. Final logo
+artwork, engraving size and physical measurements remain production details
+handled by the team. Whether 100 units is shared across both dates is pending.
 
 ## Airtable preparation before publishing
 
 Use the separate event table. Required fields:
 `Name`, `Company`, `Email`, `Phone`, `Gift`, `Decoration`, `Font`, `Ticket`, `Status`.
-Add `Font` as a text field (or a single-select with the three exact font names).
+Use an ordinary text field for `Font`; it stores only the selected font name for
+the engraving team. Airtable's display typeface has no effect on engraving.
 Allow `travel adaptor` in `Gift` and `Queued` in `Status` if using single-select.
 No live Airtable schema changes have been made.
 

@@ -5,8 +5,8 @@ import { validatePersonalisation } from '../firebase-functions/personalisation';
 
 // ─────────────────────────────────────────────────────────────
 const TWEAK_DEFAULTS = {
-    "style": "cream",
-    "accent": "#38bedc",
+    "style": "nuvei",
+    "accent": EVENT.theme.signalBlue,
     "showInventory": false,
     "eventName": EVENT.name,
     "venue": "",
@@ -246,7 +246,7 @@ function Btn({ children, onClick, disabled, variant = 'primary', style = {} }) {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
   };
   const variants = {
-    primary: { background: 'var(--accent)', color: '#0a0a0a' },
+    primary: { background: 'var(--accent)', color: 'var(--button-fg, #0a0a0a)' },
     ghost:   { background: 'transparent', color: 'var(--fg)', border: '1px solid var(--line)' },
     dark:    { background: 'var(--fg)', color: 'var(--bg)' },
   };
@@ -370,8 +370,17 @@ function GiftIllustration({ type, name = '', compact = false, stickerImg = null,
   if (configuredProduct) {
     return (
       <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: name ? '30px 12px' : 4, boxSizing: 'border-box' }}>
-        {name && <div style={{ fontFamily: font?.css, fontSize: 28, color: '#202020', marginBottom: 8 }}>{name}</div>}
-        <img src={configuredProduct.image} alt="Black Nuvei travel adaptor reference" style={{ width: '100%', maxHeight: name ? '65%' : '100%', objectFit: 'contain' }} />
+        {name ? (
+          <svg viewBox="0 0 180 260" role="img" aria-label={`Front placement preview: ${name} above the socket, Nuvei below`} style={{ width: '100%', height: '100%', maxHeight: 220 }}>
+            <rect x="20" y="6" width="140" height="248" rx="28" fill="#333" stroke="#777" strokeWidth="3" />
+            <rect x="27" y="13" width="126" height="234" rx="23" fill="#484848" stroke="#222" />
+            <text x="90" y="52" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: font?.css, fontSize: 22 }}>{name}</text>
+            <path d="M82 80h16v28h-16z M61 132h20v30H61z M103 132h20v30h-20z" fill="#111" stroke="#999" strokeWidth="2" />
+            <text x="90" y="215" textAnchor="middle" fill="#b7b7b7" style={{ fontFamily: 'Inter Tight, sans-serif', fontSize: 22, fontWeight: 700 }}>nuvei</text>
+          </svg>
+        ) : (
+          <img src={configuredProduct.image} alt="Black Nuvei travel adaptor reference" style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        )}
         {name && <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 }}>Name above socket · Nuvei logo below</div>}
       </div>
     );
@@ -671,13 +680,13 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
             position: 'absolute', top: 12, left: 14,
             fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
           }}>
-            Name preview · {gift.name}
+            Placement preview · {gift.name}
           </div>
           <div style={{
             position: 'absolute', bottom: 10, right: 14,
             fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, color: 'var(--fg-dim)',
           }}>
-            PRODUCT REFERENCE · NOT TO SCALE
+            ILLUSTRATION · NOT TO SCALE
           </div>
         </div>
 
@@ -891,12 +900,12 @@ function TweaksPanel({ tweaks, setTweak, visible }) {
           <TSection label="Style">
             <Chips value={tweaks.style} options={[
               { v: 'neon', l: 'Neon' }, { v: 'acid', l: 'Acid' },
-              { v: 'cream', l: 'Cream' }, { v: 'mono', l: 'Mono' },
+              { v: 'cream', l: 'Cream' }, { v: 'mono', l: 'Mono' }, { v: 'nuvei', l: 'Nuvei' },
             ]} onChange={v => setTweak({ style: v })} />
           </TSection>
           <TSection label="Accent">
             <div style={{ display: 'flex', gap: 6 }}>
-              {['#38bedc', '#d4ff3a', '#ff4d2e', '#ff2ea8', '#ffffff'].map(c => (
+              {[EVENT.theme.signalBlue, EVENT.theme.coreNavy, '#38bedc', '#d4ff3a', '#ffffff'].map(c => (
                 <button key={c} onClick={() => setTweak({ accent: c })} style={{
                   width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
                   background: c, border: tweaks.accent === c ? '2px solid #fff' : '1px solid #333',
@@ -937,19 +946,23 @@ const INITIAL_GIFTS = EVENT.products;
 function App() {
   const [tweaks, setTweaksState] = useState(() => {
     try {
-      const saved = localStorage.getItem(`lc.tweaks.${EVENT.id}`);
+      const saved = localStorage.getItem(`lc.tweaks.${EVENT.id}.official-v1`);
       return saved ? { ...TWEAK_DEFAULTS, ...JSON.parse(saved) } : TWEAK_DEFAULTS;
     } catch { return TWEAK_DEFAULTS; }
   });
   const setTweak = (patch) => {
     const next = { ...tweaks, ...patch };
     setTweaksState(next);
-    localStorage.setItem(`lc.tweaks.${EVENT.id}`, JSON.stringify(next));
+    localStorage.setItem(`lc.tweaks.${EVENT.id}.official-v1`, JSON.stringify(next));
     window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, window.location.origin);
   };
 
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', tweaks.accent);
+    document.documentElement.style.setProperty('--brand-blue', EVENT.theme.signalBlue);
+    document.documentElement.style.setProperty('--brand-navy', EVENT.theme.coreNavy);
+    document.documentElement.style.setProperty('--brand-white', EVENT.theme.warmWhite);
+    document.documentElement.style.setProperty('--brand-grey', EVENT.theme.supportGrey);
   }, [tweaks.accent]);
 
   const [screenW, setScreenW] = useState(() => window.innerWidth);
@@ -1083,7 +1096,7 @@ function App() {
     <div data-screen-label={label} className={`style-${tweaks.style}`}
       style={{
         position: 'fixed', inset: 0, zIndex: 10,
-        background: isPhone ? 'var(--bg)' : '#0d0d0d',
+        background: isPhone ? 'var(--bg)' : EVENT.theme.coreNavy,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
       <div style={{

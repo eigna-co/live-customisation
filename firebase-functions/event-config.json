@@ -5,6 +5,14 @@
   "dateLabel": "20–21 October",
   "ticketPrefix": "NU",
   "websiteFont": "Inter Tight",
+  "theme": {
+    "signalBlue": "#0C98D3",
+    "coreNavy": "#160850",
+    "warmWhite": "#FAF9F8",
+    "supportGrey": "#CFC9C2",
+    "source": "Nuvei ANZ Partner Brand Guidelines v.01, page 12, linked from https://www.nuvei.com/partner-marketing-kit/anz",
+    "sourceUrl": "https://www.dropbox.com/scl/fo/jptaw0ga1t3c5gilgamlv/AJl-FvZ1VipgSv0rCtJYoF4/Nuvei%20ANZ-Partner%20Brand%20Guidelines_V1.01.pdf?rlkey=s596vr4aaax6lgdb7yat8y91j&dl=0"
+  },
   "products": [{
     "id": "adaptor",
     "code": "NU-001",
