@@ -8,8 +8,9 @@ const VALID_REDEMPTION = {
   company: 'Example Co',
   email: 'Jane@Example.com',
   phone: '+65 9123 4567',
-  gift: 'Coffee Tumbler',
+  gift: 'Travel Adaptor',
   decoration: 'Jane',
+  font: 'segoe-print',
 };
 
 function event(body, httpMethod = 'POST') {
@@ -74,7 +75,7 @@ test('rejects invalid fields before contacting Airtable', async () => {
   assert.equal(called, false);
 });
 
-test('enforces the product-specific notebook decoration rule', async () => {
+test('rejects a product from a previous event', async () => {
   let called = false;
   global.fetch = async () => { called = true; };
 
@@ -131,16 +132,18 @@ test('creates only allow-listed fields with server-controlled values', async () 
 
   assert.equal(response.statusCode, 201);
   const result = JSON.parse(response.body);
-  assert.match(result.ticket, /^CC·[A-F0-9]{10}$/);
+  assert.match(result.ticket, /^NU·[A-F0-9]{10}$/);
   assert.equal(calls.length, 2);
 
   const submitted = JSON.parse(calls[1].options.body).fields;
   assert.deepEqual(Object.keys(submitted).sort(), [
-    'Company', 'Decoration', 'Email', 'Gift', 'Name', 'Phone', 'Status', 'Ticket',
+    'Company', 'Decoration', 'Email', 'Font', 'Gift', 'Name', 'Phone', 'Status', 'Ticket',
   ]);
   assert.equal(submitted.Email, 'jane@example.com');
   assert.equal(submitted.Phone, '+6591234567');
   assert.equal(submitted.Status, 'Queued');
+  assert.equal(submitted.Decoration, 'Jane');
+  assert.equal(submitted.Font, 'Segoe Print');
   assert.equal(submitted.Ticket, result.ticket);
 });
 

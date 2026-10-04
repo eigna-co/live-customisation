@@ -1,0 +1,7 @@
+{
+  "name": "event-queue-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "dependencies": { "firebase-functions": "7.4.0" }
+}

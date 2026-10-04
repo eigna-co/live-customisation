@@ -1,28 +1,30 @@
-import React, { useState, useEffect, useMemo, useId } from 'react';
+import React, { useState, useEffect, useId, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import EVENT from '../firebase-functions/event-config.json';
+import { validatePersonalisation } from '../firebase-functions/personalisation';
 
 // ─────────────────────────────────────────────────────────────
 const TWEAK_DEFAULTS = {
     "style": "cream",
     "accent": "#38bedc",
-    "showInventory": true,
-    "eventName": "A TGE LIVE EXPERIENCE",
-    "venue": "AXXEL",
+    "showInventory": false,
+    "eventName": EVENT.name,
+    "venue": "",
     "lowStock": 20
   };
 
 // Configuration
 // ─────────────────────────────────────────────────────────────
 const CONFIG = {
-  // Airtable credentials are now server-side in the Netlify function — not here
+  // Airtable credentials stay in the server-side order service.
   CONTACT_FORM_URL: 'https://airtable.com/appdvB1aUSC8Q0Z2T/pagDaSkn5Er5Lcuuq/form',
 };
 
 async function airtableRequest(action, payload = {}) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
-    const res = await fetch('/.netlify/functions/airtable', {
+    const res = await fetch('/api/redemptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, ...payload }),
@@ -49,6 +51,7 @@ async function submitToAirtable(fields) {
       phone: fields.Phone,
       gift: fields.Gift,
       decoration: fields.Decoration,
+      font: fields.Font,
     },
   });
 }
@@ -362,7 +365,17 @@ function ConsentRow() {
 // Gift illustrations
 // ─────────────────────────────────────────────────────────────
 
-function GiftIllustration({ type, name = '', compact = false, stickerImg = null }) {
+function GiftIllustration({ type, name = '', compact = false, stickerImg = null, font }) {
+  const configuredProduct = EVENT.products.find(product => product.id === type);
+  if (configuredProduct) {
+    return (
+      <div style={{ height: '100%', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: name ? '30px 12px' : 4, boxSizing: 'border-box' }}>
+        {name && <div style={{ fontFamily: font?.css, fontSize: 28, color: '#202020', marginBottom: 8 }}>{name}</div>}
+        <img src={configuredProduct.image} alt="Black Nuvei travel adaptor reference" style={{ width: '100%', maxHeight: name ? '65%' : '100%', objectFit: 'contain' }} />
+        {name && <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 }}>Name above socket · Nuvei logo below</div>}
+      </div>
+    );
+  }
   // ── IMAGE PATHS ──────────────────────────────────────────────
   // Save your images into an `images/` folder in the same repo:
   //   images/tumbler.webp  ← Coffee Tumbler
@@ -465,7 +478,7 @@ function WelcomeScreen({ onStart, eventName, venue, lineCopy, mobile }) {
           marginTop: 16, fontFamily: 'var(--mono)', fontSize: 10,
           letterSpacing: 2, textTransform: 'uppercase', color: 'var(--fg)',
         }}>
-          Wicked Culture 2026
+          {EVENT.brand} · {EVENT.dateLabel}
         </div>
         <div style={{ marginTop: 22, fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, maxWidth: 320 }}>
           {lineCopy}
@@ -479,7 +492,6 @@ function WelcomeScreen({ onStart, eventName, venue, lineCopy, mobile }) {
           letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
         }}>
           <span>// {eventName}</span>
-          <span>Est. 3 min</span>
         </div>
         <Btn onClick={onStart}>Start →</Btn>
         <div style={{
@@ -507,22 +519,22 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
       <StepHeader
         step={1} total={4} onBack={onBack}
         title="Your details."
-        subtitle="We'll send you an SMS notification when it's ready to collect."
+        subtitle="Enter your details for your personalised gift."
       />
       <div style={{ flex: 1, overflowY: 'auto', margin: mobile ? '0 -20px' : '0 -24px', padding: mobile ? '0 20px 20px' : '0 24px 20px' }}>
-        <Field label="Full name" name="name" autoComplete="name" value={data.name} onChange={v => setData({ ...data, name: v })} placeholder="Jane Tan"/>
-        <Field label="Company" name="company" autoComplete="organization" value={data.company} onChange={v => setData({ ...data, company: v })} placeholder="e.g. Hypebeast SG"/>
+        <Field label="Full name" name="name" autoComplete="name" maxLength={100} value={data.name} onChange={v => setData({ ...data, name: v })} placeholder="Jane Tan"/>
+        <Field label="Company" name="company" autoComplete="organization" maxLength={100} value={data.company} onChange={v => setData({ ...data, company: v })} placeholder="Your company"/>
         <Field
           label="Company email" name="email" autoComplete="email" inputMode="email"
           value={data.email} onChange={v => setData({ ...data, email: v })}
-          placeholder="you@company.com" type="email"
+          placeholder="you@company.com" type="email" maxLength={254}
           hint="One redemption per email address. This is checked when you confirm."
         />
         <Field
           label="Mobile" name="phone" autoComplete="tel" inputMode="tel"
           value={data.phone} onChange={v => setData({ ...data, phone: v })}
           placeholder="+65 9123 4567" type="tel"
-          hint={data.phone && !validPhone ? 'Enter a valid SG mobile number, e.g. +6591234567' : "We'll SMS you here when your gift is ready."}
+          hint={data.phone && !validPhone ? 'Enter a valid SG mobile number, e.g. +6591234567' : 'Contact number for your order.'}
         />
         <ConsentRow />
       </div>
@@ -540,7 +552,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
       onClick={() => !out && onSelect(gift.id)}
       disabled={out}
       aria-pressed={selected}
-      aria-label={`${gift.name}. ${out ? 'Sold out' : 'In stock'}`}
+      aria-label={`${gift.name}. ${out ? 'Sold out' : 'Available to personalise'}`}
       style={{
         width: '100%', textAlign: 'left', padding: 0, cursor: out ? 'not-allowed' : 'pointer',
         background: 'var(--surface)', borderRadius: 18,
@@ -569,7 +581,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
               fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase',
               color: out ? '#ff4d4d' : 'var(--fg-dim)', marginTop: 6,
             }}>
-              {out ? '◆ Sold out' : '◆ In stock'}
+              {out ? '◆ Sold out' : `Event allocation: ${gift.quantity}`}
             </div>
           )}
         </div>
@@ -582,7 +594,7 @@ function GiftPickerScreen({ gifts, selected, setSelected, onNext, onBack, showIn
   const px = mobile ? 20 : 24;
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? `24px ${px}px 20px` : `40px ${px}px 24px` }}>
-      <StepHeader step={2} total={4} onBack={onBack} title="Pick your piece." subtitle="Choose from 3 curated drops."/>
+      <StepHeader step={2} total={4} onBack={onBack} title="Your gift." subtitle={gifts.length === 1 ? 'Personalise your event gift.' : `Choose from ${gifts.length} event gifts.`}/>
       <div style={{ flex: 1, overflowY: 'auto', margin: `0 -${px}px`, padding: `0 ${px}px` }}>
         {gifts.map(g => (
           <GiftCard key={g.id} gift={g} selected={selected === g.id} onSelect={setSelected} showInventory={showInventory}/>
@@ -632,8 +644,10 @@ function StickerPicker({ stickers, value, onChange }) {
   );
 }
 
-function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, onBack, submitting, submitError, mobile }) {
-  const MAX = 8;
+function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, setFontId, onNext, onBack, submitting, submitError, mobile }) {
+  const MAX = gift.personalisation.maxLetters;
+  const selectedFont = gift.personalisation.fonts.find(font => font.id === fontId);
+  const valid = !!validatePersonalisation(gift, personalisation, fontId);
   const isSticker = !!gift.stickers;
   const selectedSticker = isSticker ? (gift.stickers.find(s => s.id === personalisation) || null) : null;
   const px = mobile ? 20 : 24;
@@ -642,7 +656,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? `24px ${px}px 16px` : `40px ${px}px 16px` }}>
         <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
-          subtitle={isSticker ? "Pick a letter. We decorate on the spot." : "Up to 8 characters. We decorate on the spot."}/>
+          subtitle={`Up to ${MAX} letters, engraved above the three-pin socket.`}/>
         <div style={{
           background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
           marginBottom: 22, position: 'relative', overflow: 'hidden',
@@ -651,18 +665,19 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, 
             type={gift.id}
             name={isSticker ? '' : (personalisation || gift.samplePlaceholder)}
             stickerImg={selectedSticker?.img || null}
+            font={selectedFont}
           />
           <div style={{
             position: 'absolute', top: 12, left: 14,
             fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
           }}>
-            Preview · {gift.name}
+            Name preview · {gift.name}
           </div>
           <div style={{
             position: 'absolute', bottom: 10, right: 14,
             fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, color: 'var(--fg-dim)',
           }}>
-            FINAL DECORATION MAY VARY
+            PRODUCT REFERENCE · NOT TO SCALE
           </div>
         </div>
 
@@ -671,11 +686,22 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, 
         ) : (
           <Field
             label="Decoration" name="decoration" autoComplete="off" value={personalisation}
-            onChange={v => setPersonalisation(v.slice(0, MAX))}
-            placeholder="Your name or handle" maxLength={MAX}
-            hint="Up to 8 characters. Will appear in ALL CAPS."
+            onChange={setPersonalisation}
+            placeholder="e.g. Jane" maxLength={MAX}
+            hint={`Maximum ${MAX} letters. No spaces, numbers or symbols. Uppercase and lowercase are preserved.`}
+            hintError={personalisation.length > 0 && !valid}
           />
         )}
+        <fieldset style={{ border: 0, padding: 0, margin: '8px 0 16px' }}>
+          <legend style={{ fontSize: 13, marginBottom: 10 }}>Engraving font</legend>
+          {gift.personalisation.fonts.map(font => (
+            <label key={font.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', fontFamily: font.css }}>
+              <input type="radio" name="engraving-font" value={font.id} checked={fontId === font.id} onChange={() => setFontId(font.id)} />
+              {font.name}
+            </label>
+          ))}
+          <p style={{ fontSize: 12, color: 'var(--fg-dim)' }}>Font preview may vary by device. Final engraving follows the selected font.</p>
+        </fieldset>
       </div>
 
       {/* Sticky Confirm at bottom */}
@@ -685,7 +711,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, onNext, 
             {submitError}
           </div>
         )}
-        <Btn onClick={onNext} disabled={personalisation.trim().length === 0 || submitting}>
+        <Btn onClick={onNext} disabled={!valid || submitting}>
           {submitting ? 'Submitting…' : 'Confirm →'}
         </Btn>
       </div>
@@ -709,13 +735,7 @@ function TicketRow({ k, v, highlight, smallCaps }) {
   );
 }
 
-function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }) {
-  const [dots, setDots] = useState('');
-  useEffect(() => {
-    const i = setInterval(() => setDots(d => d.length >= 3 ? '' : d + '·'), 400);
-    return () => clearInterval(i);
-  }, []);
-
+function TicketScreen({ ticket, gift, personalisation, fontId, data, onCollect, mobile }) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
@@ -736,19 +756,20 @@ function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }
           <span>Powered by The Gift Expert</span>
         </div>
         <h1 tabIndex="-1" style={{
-          fontFamily: 'var(--display)', fontSize: 64, fontWeight: 800,
+          fontFamily: 'var(--display)', fontSize: 28, fontWeight: 800,
           lineHeight: 0.9, letterSpacing: -2.5, color: 'var(--fg)', margin: '0 0 4px', outline: 'none',
         }}>{ticket}</h1>
         <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--fg-dim)', marginBottom: 22 }}>
-          Queue no. · Keep this screen handy.
+          Order reference · Save this screen for collection.
         </div>
         <div style={{ borderTop: '1px dashed var(--line)', margin: '0 -24px 20px' }} />
         <TicketRow k="Gift" v={gift.name} smallCaps />
         <TicketRow k="Decoration" v={(gift.stickers
           ? (gift.stickers.find(s => s.id === personalisation)?.name ?? personalisation)
-          : personalisation).toUpperCase() || '—'} highlight />
+          : personalisation) || '—'} highlight />
+        <TicketRow k="Font" v={gift.personalisation.fonts.find(font => font.id === fontId)?.name} />
         <TicketRow k="For" v={data.name} />
-        <TicketRow k="SMS to" v={data.phone} />
+        <TicketRow k="Contact" v={data.phone} />
       </div>
 
       <div role="status" aria-live="polite" style={{
@@ -758,15 +779,15 @@ function TicketScreen({ ticket, gift, personalisation, data, onCollect, mobile }
       }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.7, marginBottom: 4 }}>Status</div>
         <div style={{ fontFamily: 'var(--display)', fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>
-          Decorating{dots}
+          Order received
         </div>
         <div style={{ marginTop: 4, fontFamily: 'var(--body)', fontSize: 13, opacity: 0.75 }}>
-          You'll receive an SMS on {data.phone} when your gift is ready.
+          Show your order reference to the event team for collection updates.
         </div>
       </div>
 
       <div style={{ flex: 1 }} />
-      <Btn onClick={onCollect} variant="dark">I've collected it ✓</Btn>
+      <Btn onClick={onCollect} variant="dark">I've saved my reference ✓</Btn>
     </div>
   );
 }
@@ -775,7 +796,7 @@ function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: mobile ? '24px 20px 20px' : '40px 24px 24px' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <Tag style={{ alignSelf: 'flex-start', marginBottom: 24 }}>Collected</Tag>
+        <Tag style={{ alignSelf: 'flex-start', marginBottom: 24 }}>Order received</Tag>
         <h1 tabIndex="-1" style={{
           fontFamily: 'var(--display)', fontSize: 48, fontWeight: 800,
           lineHeight: 0.95, letterSpacing: -2, color: 'var(--fg)', textTransform: 'uppercase', margin: '0 0 18px', outline: 'none',
@@ -786,7 +807,7 @@ function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
           </span>
         </h1>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 12 }}>
-          Your <b style={{ color: 'var(--fg)', fontVariant: 'small-caps' }}>{gift.name}</b>, decorated <b style={{ color: 'var(--fg)' }}>{personalisation.toUpperCase()}</b>, has been collected.
+          Your order for a <b style={{ color: 'var(--fg)', fontVariant: 'small-caps' }}>{gift.name}</b>, personalised with <b style={{ color: 'var(--fg)' }}>{personalisation}</b>, has been saved. Please check with the event team before collecting.
         </div>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 30 }}>
           Show it off. Tag{' '}
@@ -907,13 +928,7 @@ function TweaksPanel({ tweaks, setTweak, visible }) {
 // Initial data
 // ─────────────────────────────────────────────────────────────
 
-const INITIAL_GIFTS = [
-  { id: 'mug',      code: 'CC-001',                  name: 'Coffee Tumbler', blurb: 'Everyday carry. Insulated stainless steel.',   samplePlaceholder: 'CULTURE', remaining: 74 },
-  { id: 'notebook', code: 'CC-002',                  name: 'Notebook',       blurb: 'Hardcover geometric. Single-lined.',            samplePlaceholder: 'CARTEL',  remaining: 18,
-    stickers: 'abcdefghijklmnopqrstuvwxyz'.split('').map(l => ({ id: `sticker-${l}`, name: l.toUpperCase(), img: `/images/sticker-${l}.webp` }))
-  },
-  { id: 'card',     code: 'CC-003',                   name: 'NETS Prepaid Card', blurb: 'For public transport and everyday expenses.', samplePlaceholder: 'YOUR NAME', remaining: 42 },
-];
+const INITIAL_GIFTS = EVENT.products;
 
 // ─────────────────────────────────────────────────────────────
 // App
@@ -922,14 +937,14 @@ const INITIAL_GIFTS = [
 function App() {
   const [tweaks, setTweaksState] = useState(() => {
     try {
-      const saved = localStorage.getItem('lc.tweaks');
+      const saved = localStorage.getItem(`lc.tweaks.${EVENT.id}`);
       return saved ? { ...TWEAK_DEFAULTS, ...JSON.parse(saved) } : TWEAK_DEFAULTS;
     } catch { return TWEAK_DEFAULTS; }
   });
   const setTweak = (patch) => {
     const next = { ...tweaks, ...patch };
     setTweaksState(next);
-    localStorage.setItem('lc.tweaks', JSON.stringify(next));
+    localStorage.setItem(`lc.tweaks.${EVENT.id}`, JSON.stringify(next));
     window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, window.location.origin);
   };
 
@@ -961,19 +976,19 @@ function App() {
   const [data, setData] = useState({ name: '', company: '', email: '', phone: '+65' });
   const [selectedGiftId, setSelectedGiftId] = useState(null);
   const [personalisation, setPersonalisation] = useState('');
+  const [fontId, setFontId] = useState(EVENT.products[0].personalisation.fonts[0].id);
+  const submissionInFlight = useRef(false);
   const [ticket, setTicket] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   useEffect(() => {
     if (selectedGiftId) {
       setPersonalisation(''); // reset when gift changes
+      setFontId(EVENT.products.find(product => product.id === selectedGiftId).personalisation.fonts[0].id);
     }
   }, [selectedGiftId]);
 
-  const gifts = useMemo(() => INITIAL_GIFTS.map(g => ({
-    ...g,
-    low: g.remaining <= tweaks.lowStock,
-  })), [tweaks.lowStock]);
+  const gifts = INITIAL_GIFTS;
   const selectedGift = gifts.find(g => g.id === selectedGiftId);
 
   const go = (s) => setStep(s);
@@ -981,6 +996,7 @@ function App() {
     setData({ name: '', company: '', email: '', phone: '+65' });
     setSelectedGiftId(null);
     setPersonalisation('');
+    setFontId(EVENT.products[0].personalisation.fonts[0].id);
     setTicket('');
     setSubmitError('');
     setStep(0);
@@ -992,7 +1008,7 @@ function App() {
   }, [step]);
 
   useEffect(() => {
-    if (step === 0 || step === 4) return;
+    if (step === 0 || step === 4 || submitting) return;
     const timeoutMs = step === 5 ? 60_000 : 10 * 60_000;
     let timeout;
     const resetTimer = () => {
@@ -1006,9 +1022,12 @@ function App() {
       clearTimeout(timeout);
       events.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
     };
-  }, [step]);
+  }, [step, submitting]);
 
   const submitRedemption = async () => {
+    const validated = validatePersonalisation(selectedGift, personalisation, fontId);
+    if (submissionInFlight.current || !validated) return;
+    submissionInFlight.current = true;
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -1018,11 +1037,11 @@ function App() {
         Email:      data.email,
         Phone:      data.phone,
         Gift:       selectedGift.name.toLowerCase(),
-        Decoration: (selectedGift.stickers
-          ? (selectedGift.stickers.find(s => s.id === personalisation)?.name ?? personalisation)
-          : personalisation).toUpperCase(),
+        Decoration: validated.decoration,
+        Font: fontId,
       });
       setTicket(result.ticket);
+      setPersonalisation(validated.decoration);
       setStep(4);
     } catch (error) {
       if (error.status === 409) setSubmitError('This email has already been used for a redemption.');
@@ -1031,21 +1050,24 @@ function App() {
       else if (error.name === 'AbortError') setSubmitError('The request timed out. Please check your connection and try again.');
       else setSubmitError('Submission failed. Please check your connection and try again.');
     }
+    submissionInFlight.current = false;
     setSubmitting(false);
   };
 
   const screenMap = {
     0: <WelcomeScreen
           eventName={tweaks.eventName} venue={tweaks.venue}
-          lineCopy={<>A complimentary gift to mark Culture Cartel × Wicked Wallop's partnership. Pick, customise, collect on-site — brought to you by <em>The Gift Expert</em>.</>}
+          lineCopy={<>Personalise your Nuvei travel adaptor with up to five letters. Choose an engraving font and collect on-site with <em>The Gift Expert</em>.</>}
           onStart={() => go(1)} mobile={isPhone} />,
     1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
     2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}
           showInventory={tweaks.showInventory} onNext={() => go(3)} onBack={() => go(1)} mobile={isPhone} />,
     3: <PersonaliseScreen gift={selectedGift} personalisation={personalisation}
+          fontId={fontId} setFontId={setFontId}
           setPersonalisation={setPersonalisation} onNext={submitRedemption} onBack={() => go(2)}
           submitting={submitting} submitError={submitError} mobile={isPhone} />,
     4: <TicketScreen ticket={ticket} gift={selectedGift} personalisation={personalisation}
+          fontId={fontId}
           data={data} onCollect={() => go(5)} mobile={isPhone} />,
     5: <DoneScreen data={data} gift={selectedGift} personalisation={personalisation} onRestart={restart} mobile={isPhone} />,
   };

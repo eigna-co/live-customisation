@@ -2,6 +2,11 @@
   functions = "netlify/functions"
   publish = "."
 
+[[redirects]]
+  from = "/api/redemptions"
+  to = "/.netlify/functions/airtable"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]

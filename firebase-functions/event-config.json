@@ -1,0 +1,29 @@
+{
+  "id": "nuvei",
+  "name": "Nuvei Live Personalisation",
+  "brand": "Nuvei",
+  "dateLabel": "20–21 October",
+  "ticketPrefix": "NU",
+  "websiteFont": "Inter Tight",
+  "products": [{
+    "id": "adaptor",
+    "code": "NU-001",
+    "name": "Travel Adaptor",
+    "blurb": "Black travel adaptor · laser engraving",
+    "image": "/images/nuvei-adaptor-reference.png",
+    "quantity": 100,
+    "samplePlaceholder": "Jane",
+    "personalisation": {
+      "maxLetters": 5,
+      "lettersOnly": true,
+      "preserveCase": true,
+      "location": "Front, above the three-pin socket",
+      "logoLocation": "Front, below the three-pin socket",
+      "fonts": [
+        {"id": "times-new-roman", "name": "Times New Roman", "css": "'Times New Roman', serif"},
+        {"id": "segoe-print", "name": "Segoe Print", "css": "'Segoe Print', cursive"},
+        {"id": "lucida-sans", "name": "Lucida Sans Regular", "css": "'Lucida Sans', 'Lucida Sans Unicode', sans-serif"}
+      ]
+    }
+  }]
+}
