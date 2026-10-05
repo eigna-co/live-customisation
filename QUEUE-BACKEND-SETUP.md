@@ -7,8 +7,12 @@ live Airtable schema has been changed.
 
 ## Implemented locally
 
-- Order creation, normalised-email uniqueness and stock reservation in one
+- Order creation, normalised-contact uniqueness across the event, and daily/total stock reservation in one
   transaction. Unchanged retries recover the same receipt without using stock.
+- Singapore calendar-day allocation: 50 on each of 20 and 21 October, no rollover,
+  100 total. Confirm and configure the year before publishing. Orders outside the dates are blocked.
+- Customer review and acknowledgement before submission; no guest cancellation or edit endpoint.
+  Existing email-keyed database records require migration before deploying this change; see EVENT-SETUP.md.
 - Public stock checks without personal data. Secret tracking tokens return only
   a reference and status. Ticket screens refresh automatically while open.
 - Staff sign-in and verified, event-authorised accounts. Every staff operation

@@ -48,6 +48,7 @@ async function airtableRequest(action, payload = {}) {
 async function submitToAirtable(fields, requestId) {
   return airtableRequest('create-redemption', {
     requestId,
+    reviewConfirmed: true,
     redemption: {
       name: fields.Name,
       company: fields.Company,
@@ -548,7 +549,7 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
           label="Company email" name="email" autoComplete="email" inputMode="email"
           value={data.email} onChange={v => setData({ ...data, email: v })}
           placeholder="you@company.com" type="email" maxLength={254}
-          hint="One redemption per email address. This is checked when you confirm."
+          hint="Email is used for your order details. One gift per contact number across the event."
         />
         <Field
           label="Mobile" name="phone" autoComplete="tel" inputMode="tel"
@@ -666,7 +667,37 @@ function StickerPicker({ stickers, value, onChange }) {
   );
 }
 
-function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, setFontId, onNext, onBack, submitting, submitError, mobile }) {
+function ReviewScreen({ gift, personalisation, font, data, onSubmit, onBack, submitting, submitError, mobile }) {
+  const [checked, setChecked] = useState(false);
+  const heading = useRef(null);
+  useEffect(() => { heading.current?.focus(); }, []);
+  return <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? '24px 20px' : '40px 24px' }}>
+      <button onClick={onBack} disabled={submitting}>← Edit engraving</button>
+      <h1 ref={heading} tabIndex={-1} style={{ fontSize: 28 }}>Check before submitting.</h1>
+      <p>Please check the spelling, capitalisation, font and contact number.</p>
+      <TicketRow k="Gift" v={gift.name} />
+      <TicketRow k="Top name" v={personalisation.trim().normalize('NFC')} highlight />
+      <TicketRow k="Font" v={font.name} />
+      <TicketRow k="Bottom" v="Pre-engraved Nuvei logo" />
+      <TicketRow k="For" v={data.name} />
+      <TicketRow k="Contact" v={data.phone} />
+      <TicketRow k="Email" v={data.email} />
+      <p>One gift per contact number for the whole event. Once submitted, you cannot cancel or change your engraving.</p>
+      <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', lineHeight: 1.5 }}>
+        <input type="checkbox" checked={checked} disabled={submitting} onChange={event => setChecked(event.target.checked)} style={{ marginTop: 5 }} />
+        I have checked my name and font and understand that no cancellation is allowed after submission.
+      </label>
+    </div>
+    <div style={{ padding: mobile ? '12px 20px 20px' : '12px 24px 24px', borderTop: '1px solid var(--line)' }}>
+      {submitError && <p role="alert">{submitError}</p>}
+      <Btn onClick={onSubmit} disabled={!checked || submitting}>{submitting ? 'Submitting…' : 'Submit order →'}</Btn>
+    </div>
+  </div>;
+}
+
+function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, setFontId, data, onNext, onBack, submitting, submitError, mobile }) {
+  const [reviewing, setReviewing] = useState(false);
   const MAX = gift.personalisation.maxLetters;
   const selectedFont = gift.personalisation.fonts.find(font => font.id === fontId);
   const topValid = !!validatePersonalisation(gift, personalisation, fontId);
@@ -674,6 +705,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
   const isSticker = !!gift.stickers;
   const selectedSticker = isSticker ? (gift.stickers.find(s => s.id === personalisation) || null) : null;
   const px = mobile ? 20 : 24;
+  if (reviewing) return <ReviewScreen gift={gift} personalisation={personalisation} font={selectedFont} data={data} onSubmit={onNext} onBack={() => setReviewing(false)} submitting={submitting} submitError={submitError} mobile={mobile} />;
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       {/* Scrollable content */}
@@ -735,8 +767,8 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
             {submitError}
           </div>
         )}
-        <Btn onClick={onNext} disabled={!valid || submitting}>
-          {submitting ? 'Submitting…' : 'Confirm →'}
+        <Btn onClick={() => setReviewing(true)} disabled={!valid || submitting}>
+          Review order →
         </Btn>
       </div>
     </div>
@@ -1123,6 +1155,8 @@ function App() {
     } catch (error) {
       if (error.code === 'sold-out') { setSubmitError('This gift has sold out. Please ask the event team.'); refreshInventory(); }
       else if (error.code === 'duplicate-email') setSubmitError('This email has already been used. Ask the event team to find your order; do not submit another email.');
+      else if (error.code === 'duplicate-contact') setSubmitError('This contact number has already claimed a gift for this event. Please ask the event team to find your order.');
+      else if (error.code === 'event-closed') setSubmitError('Orders are only accepted on the event dates. Please check with the event team.');
       else if (error.status === 409) setSubmitError('Your request changed or was already used. Please ask the event team for help.');
       else if (error.status === 429) setSubmitError('The service is busy. Please wait a minute and try again.');
       else if (error.status === 422) setSubmitError('Please check your details and personalisation, then try again.');
@@ -1143,6 +1177,7 @@ function App() {
           inventoryError={inventoryError} onRefresh={refreshInventory}
           showInventory={tweaks.showInventory} onNext={() => go(3)} onBack={() => go(1)} mobile={isPhone} />,
     3: <PersonaliseScreen gift={selectedGift} personalisation={personalisation}
+          data={data}
           fontId={fontId} setFontId={setFontId}
           setPersonalisation={setPersonalisation} onNext={submitRedemption} onBack={() => go(2)}
           submitting={submitting} submitError={submitError} mobile={isPhone} />,

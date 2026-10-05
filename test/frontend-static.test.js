@@ -14,6 +14,15 @@ test('Nuvei personalisation exposes only top text and a fixed logo below', () =>
   assert.match(source, /Engraving font · top personalisation/);
 });
 
+test('customer reviews their engraving before an irreversible submission', () => {
+  assert.match(source, /Review order →/);
+  assert.match(source, /Check before submitting/);
+  assert.match(source, /disabled={!checked \|\| submitting}/);
+  assert.match(source, /reviewConfirmed: true/);
+  assert.match(source, /no cancellation is allowed after submission/);
+  assert.match(source, /duplicate-contact/);
+});
+
 test('does not ship the old client-side staff password or panel', () => {
   assert.doesNotMatch(source, /STAFF_PASSWORD|StaffPanel|onStaffTap|type="password"/);
 });

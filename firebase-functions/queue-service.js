@@ -13,7 +13,19 @@ const fail = (status, message, code) => { throw new ApiError(status, message, co
 const nextStatus = { Queued: 'Decorating', Decorating: 'Ready', Ready: 'Collected' };
 const receipt = order => ({ ticket: order.ticket, trackingToken: order.trackingToken, status: order.status });
 
-function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetch = fetch, now = Date.now }) {
+function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetch = fetch, now = Date.now, eventConfig = config }) {
+  function eventDay(at) {
+    const schedule = eventConfig.schedule;
+    if (!Number.isInteger(schedule?.year)) fail(503, 'The event year has not been configured.', 'event-unconfigured');
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: schedule.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(at)).map(part => [part.type, part.value]));
+    if (Number(parts.year) !== schedule.year || Number(parts.month) !== schedule.month || !schedule.days.includes(Number(parts.day))) return null;
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+  function inventoryData(snap, capacity) {
+    const value = snap.exists ? snap.data() : { capacity, reserved: 0 };
+    if (!Number.isSafeInteger(value.capacity) || value.capacity < 0 || !Number.isSafeInteger(value.reserved) || value.reserved < 0) fail(503, 'Stock is unavailable. Please contact the event team.');
+    return value;
+  }
   async function staff(event) {
     const token = event.headers?.authorization?.match(/^Bearer (\S+)$/i)?.[1];
     if (!token) fail(401, 'Please sign in.');
@@ -24,49 +36,59 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
   }
 
   async function createOrder(request) {
+    if (request.reviewConfirmed !== true) fail(422, 'Please review and confirm your engraving details.', 'review-required');
     if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(request.requestId || '')) fail(422, 'Invalid request reference.');
     if (Object.hasOwn(request.redemption || {}, 'decorationBottom')) fail(422, 'Only the top area can be personalised. The bottom has a pre-engraved Nuvei logo.');
     const details = validation.validateRedemption(request.redemption);
     if (!details) fail(422, 'Invalid redemption details.');
-    const product = config.products.find(product => product.name.toLowerCase() === details.gift);
+    const product = eventConfig.products.find(product => product.name.toLowerCase() === details.gift);
     const fingerprint = digest(JSON.stringify(details));
     const db = getDb();
-    const orderId = digest(details.email);
+    const orderId = digest(details.phone);
     const orderRef = db.doc(`${paths.root}/orders/${orderId}`);
     const requestRef = db.doc(`${paths.root}/requests/${request.requestId}`);
-    const stockRef = db.doc(`${paths.root}/inventory/${product.id}`);
     // Generate these once, outside the callback: Firestore may retry transactions.
     const ticket = `${config.ticketPrefix}·${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
     const trackingToken = crypto.randomBytes(32).toString('hex');
     return db.runTransaction(async tx => {
-      const [savedRequest, existing, stock] = await Promise.all([tx.get(requestRef), tx.get(orderRef), tx.get(stockRef)]);
+      const [savedRequest, existing] = await Promise.all([tx.get(requestRef), tx.get(orderRef)]);
       if (savedRequest.exists) {
         if (savedRequest.data().fingerprint !== fingerprint || savedRequest.data().orderId !== orderId) fail(409, 'This request reference was already used for different details.', 'request-conflict');
         if (!existing.exists) fail(503, 'Please contact the event team with your reference.');
         return { ...receipt(existing.data()), replayed: true };
       }
-      if (existing.exists) fail(409, 'Email has already been used', 'duplicate-email');
-      const inventory = stock.exists ? stock.data() : { capacity: product.quantity, reserved: 0 };
-      if (!Number.isSafeInteger(inventory.capacity) || !Number.isSafeInteger(inventory.reserved) || inventory.reserved < 0) fail(503, 'Stock is unavailable. Please contact the event team.');
-      if (inventory.reserved >= inventory.capacity) fail(409, 'This gift is sold out.', 'sold-out');
-      const order = { ...details, productId: product.id, ticket, trackingToken, status: 'Queued', createdAt: now(), updatedAt: now(), version: 0, mirrorState: 'Pending' };
+      if (existing.exists) fail(409, 'This contact number has already claimed a gift for this event.', 'duplicate-contact');
+      const at = now();
+      const day = eventDay(at);
+      if (!day) fail(409, 'Orders are only accepted on the event dates.', 'event-closed');
+      const stockRef = db.doc(`${paths.root}/inventory/${product.id}`);
+      const dailyRef = db.doc(`${paths.root}/inventory/${product.id}-${day}`);
+      const [stock, dailyStock] = await Promise.all([tx.get(stockRef), tx.get(dailyRef)]);
+      const inventory = inventoryData(stock, product.quantity);
+      const daily = inventoryData(dailyStock, product.dailyQuantity);
+      if (inventory.reserved >= Math.min(inventory.capacity, product.quantity) || daily.reserved >= Math.min(daily.capacity, product.dailyQuantity)) fail(409, 'Today’s allocation is sold out.', 'sold-out');
+      const order = { ...details, eventDay: day, reviewConfirmedAt: at, productId: product.id, ticket, trackingToken, status: 'Queued', createdAt: at, updatedAt: at, version: 0, mirrorState: 'Pending' };
       tx.create(orderRef, order);
       tx.create(requestRef, { orderId, fingerprint });
       tx.create(db.doc(`${paths.root}/tracking/${digest(trackingToken)}`), { orderId });
       tx.set(stockRef, { ...inventory, reserved: inventory.reserved + 1 });
+      tx.set(dailyRef, { ...daily, reserved: daily.reserved + 1 });
       return receipt(order);
     });
   }
 
   async function availability() {
     const db = getDb();
-    const products = await Promise.all(config.products.map(async product => {
+    const day = eventDay(now());
+    const products = await Promise.all(eventConfig.products.map(async product => {
+      if (!day) return { id: product.id, remaining: 0 };
       const snap = await db.doc(`${paths.root}/inventory/${product.id}`).get();
-      const data = snap.exists ? snap.data() : { capacity: product.quantity, reserved: 0 };
-      if (!Number.isSafeInteger(data.capacity) || !Number.isSafeInteger(data.reserved) || data.reserved < 0) fail(503, 'Stock is unavailable.');
-      return { id: product.id, remaining: Math.max(0, data.capacity - data.reserved) };
+      const dailySnap = await db.doc(`${paths.root}/inventory/${product.id}-${day}`).get();
+      const data = inventoryData(snap, product.quantity);
+      const daily = inventoryData(dailySnap, product.dailyQuantity);
+      return { id: product.id, remaining: Math.max(0, Math.min(Math.min(data.capacity, product.quantity) - data.reserved, Math.min(daily.capacity, product.dailyQuantity) - daily.reserved)) };
     }));
-    return { products };
+    return { products, eventDay: day, eventClosed: !day };
   }
 
   return async event => {
@@ -77,7 +99,7 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
     if (!request || typeof request !== 'object' || Array.isArray(request)) return reply(400, { error: 'Invalid request' });
     try {
       if (request.action === 'create-redemption') {
-        const address = `${event.clientAddress || 'unknown'}:${digest(validation.normaliseEmail(request.redemption?.email) || 'invalid')}`;
+        const address = `${event.clientAddress || 'unknown'}:${digest(validation.normalisePhone(request.redemption?.phone) || 'invalid')}`;
         if (validation.isRateLimited({ clientAddress: address })) return { ...reply(429, { error: 'Too many requests. Please wait and try again.' }), headers: { ...headers, 'Retry-After': '60' } };
         const result = await createOrder(request);
         return reply(result.replayed ? 200 : 201, result);

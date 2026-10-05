@@ -3,6 +3,7 @@
   "name": "Nuvei Live Personalisation",
   "brand": "Nuvei",
   "dateLabel": "20–21 October",
+  "schedule": { "year": null, "month": 10, "days": [20, 21], "timeZone": "Asia/Singapore" },
   "ticketPrefix": "NU",
   "websiteFont": "Inter Tight",
   "theme": {
@@ -20,6 +21,7 @@
     "blurb": "Black travel adaptor · laser engraving",
     "image": "/images/nuvei-adaptor-studio.png",
     "quantity": 100,
+    "dailyQuantity": 50,
     "samplePlaceholder": "Jane",
     "personalisation": {
       "maxLetters": 5,

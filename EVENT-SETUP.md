@@ -6,7 +6,11 @@ code; it is not a staff administration screen.
 
 Configured from supplied requirements:
 - Nuvei, 20–21 October (year deliberately omitted pending confirmation).
-- Black travel adaptor, event allocation 100.
+- Black travel adaptor: 50 per Singapore calendar day, 100 total across both dates.
+- One normalised contact number can claim one gift across the entire event;
+  email remains an order detail, not the uniqueness key. Existing validation accepts SG mobiles only.
+- A final review displays the engraving, font and contact details. Customers must
+  acknowledge checking the name/font and no cancellation before submission.
 - One to five letters; surrounding whitespace is trimmed, internal spaces,
   numbers and symbols are rejected. Letter casing is preserved. International
   letters are accepted; any narrower character or word restrictions are pending.
@@ -37,7 +41,23 @@ document URL is recorded in event-config.json. Navy text on blue buttons preserv
 contrast; small text uses navy rather than blue on white. The client-approved visual direction and
 front top/bottom placement are sufficient for the website draft. Final logo
 artwork, engraving size and physical measurements remain production details
-handled by the team. Whether 100 units is shared across both dates is pending.
+handled by the team. The allocation is confirmed as 50 per day, without rollover.
+
+## Event dates and contact-key migration
+
+`schedule.year` remains null until the event year is confirmed. The live service fails
+closed until it is set, and rejects new orders outside 20–21 October in Asia/Singapore.
+Day stock documents use `adaptor-YYYY-MM-DD`; the total stock counter is also retained.
+Neither the guest nor staff chooses the redemption date. Successful request retries
+can recover their original receipt after a date change without reserving more stock.
+The isolated preview explicitly simulates 20 October 2026; this is NOT a confirmed event year.
+
+Order IDs now hash normalised contact numbers rather than email. Before applying this
+to a database that already contains email-keyed orders, migrate those records and
+their request/tracking links, deduplicate contacts and initialise day counters from
+the actual orders. Do not simply deploy over old data: that could permit duplicate gifts.
+No live database migration has been performed. SMS remains unconnected, pending provider,
+sender, credentials, costs and approved message text. The review does not promise an SMS.
 
 ## Airtable preparation before publishing
 

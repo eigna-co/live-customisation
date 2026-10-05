@@ -7,7 +7,10 @@ const require = createRequire(import.meta.url);
 const { fakeDb } = require('../test/fake-db');
 const { createQueueHandler } = require('../firebase-functions/queue-service');
 const db = fakeDb();
-const handler = createQueueHandler({ getDb: () => db, webApiKey: () => 'local-test', verifyToken: async token => {
+// Simulated event date only. Never write this date/year into the live configuration.
+const previewConfig = structuredClone(require('../firebase-functions/event-config.json'));
+previewConfig.schedule.year = 2026;
+const handler = createQueueHandler({ getDb: () => db, eventConfig: previewConfig, now: () => Date.parse('2026-10-20T02:00:00Z'), webApiKey: () => 'local-test', verifyToken: async token => {
   if (token !== 'local-test-token') throw new Error('Invalid token');
   return { uid: 'local-test', eventStaff: 'nuvei', email_verified: true };
 }, authFetch: async (url, options) => {
