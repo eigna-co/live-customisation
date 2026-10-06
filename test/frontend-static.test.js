@@ -17,14 +17,23 @@ test('Nuvei personalisation exposes only top text and a fixed logo below', () =>
 test('customer reviews their engraving before an irreversible submission', () => {
   assert.match(source, /Review order →/);
   assert.match(source, /Check before submitting/);
-  assert.match(source, /disabled={!checked \|\| submitting}/);
+  assert.match(source, /nextDisabled={!checked \|\| submitting}/);
   assert.match(source, /reviewConfirmed: true/);
   assert.match(source, /no cancellation is allowed after submission/);
-  assert.match(source, /duplicate-contact/);
+  assert.match(source, /One gift per email address/);
+  assert.doesNotMatch(source, /duplicate-contact|One gift per contact number/);
 });
 
 test('does not ship the old client-side staff password or panel', () => {
   assert.doesNotMatch(source, /STAFF_PASSWORD|StaffPanel|onStaffTap|type="password"/);
+});
+
+test('every pre-submission screen has bottom Back navigation and submission blocks going back', () => {
+  assert.match(source, /function StepNavigation/);
+  assert.match(source, /onClick={onBack} disabled={busy}/);
+  assert.equal((source.match(/<StepNavigation onBack={onBack}/g) || []).length, 4);
+  assert.match(source, /if \(submissionInFlight\.current \|\| ticket\) return;/);
+  assert.match(source, /onBack=\{\(\) => setReviewing\(false\)\}/);
 });
 
 test('does not put guest details into the external contact URL', () => {

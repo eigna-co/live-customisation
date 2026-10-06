@@ -3,7 +3,7 @@
   "name": "Nuvei Live Personalisation",
   "brand": "Nuvei",
   "dateLabel": "20–21 October",
-  "schedule": { "year": null, "month": 10, "days": [20, 21], "timeZone": "Asia/Singapore" },
+  "schedule": { "year": 2026, "month": 10, "days": [20, 21], "timeZone": "Asia/Singapore" },
   "ticketPrefix": "NU",
   "websiteFont": "Inter Tight",
   "theme": {

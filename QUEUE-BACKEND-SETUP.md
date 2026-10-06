@@ -2,17 +2,18 @@
 
 Keep the current Netlify address. Firebase supplies the order service, Firestore
 database and staff authentication; Airtable receives an asynchronous event copy.
-Nothing has been deployed or provisioned. No billing, domain, staff account or
+The user created `tgelive-1b68d` on Spark; `.firebaserc` selects it locally.
+No backend has been deployed or provisioned. No billing, domain, staff account or
 live Airtable schema has been changed.
 
 ## Implemented locally
 
-- Order creation, normalised-contact uniqueness across the event, and daily/total stock reservation in one
+- Order creation, normalised-email uniqueness across the event, and daily/total stock reservation in one
   transaction. Unchanged retries recover the same receipt without using stock.
 - Singapore calendar-day allocation: 50 on each of 20 and 21 October, no rollover,
-  100 total. Confirm and configure the year before publishing. Orders outside the dates are blocked.
+  100 total, in 2026. Orders outside the dates are blocked.
 - Customer review and acknowledgement before submission; no guest cancellation or edit endpoint.
-  Existing email-keyed database records require migration before deploying this change; see EVENT-SETUP.md.
+  Existing contact-keyed database records require migration before deploying this change; see EVENT-SETUP.md.
 - Public stock checks without personal data. Secret tracking tokens return only
   a reference and status. Ticket screens refresh automatically while open.
 - Staff sign-in and verified, event-authorised accounts. Every staff operation
@@ -23,9 +24,14 @@ live Airtable schema has been changed.
   never a blind second POST. Staff can retry failures, check existing copies and
   recover workers stalled over two minutes. Multiple matches need human review.
 - Browser Firestore access denied. Legacy Netlify endpoint uses the same proxy.
+- Collection SMS is queued atomically on the first Ready transition. A durable
+  attempt claim prevents duplicate sends from trigger retries, network timeouts,
+  staff double clicks, or crashes. Ambiguous attempts require Twilio log review;
+  only blocked, never-attempted messages can be requeued by authenticated staff.
+  Accepted means submitted, NOT delivered. Confirm delivery in Twilio logs.
 
 Firestore is the stock/status authority; Airtable edits do not update the queue.
-No cancellation, stock release, order editing, SMS, global distributed rate
+No cancellation, stock release, order editing, automatic SMS delivery callbacks, global distributed rate
 limiting or event administration UI is included. Staff listing is capped at 200
 rows, sufficient for this 100-unit event but not a general large-event solution.
 Guest tracking is memory-only: a screenshot preserves a reference, not a
@@ -50,7 +56,7 @@ the isolated preview with sample data only.
 
 ## Setup required before publishing
 
-1. Confirm the Firebase project ID and owner. A separate event-platform project
+1. Selected Firebase project: `tgelive-1b68d`. A separate event-platform project
    avoids mixing other EVFY data. Owner must approve paid services before enabling
    them. Instance limits are not a spending cap.
 2. Provision Firestore with an appropriate location and email/password Firebase
@@ -59,7 +65,10 @@ the isolated preview with sample data only.
    grants the event custom claim using Admin SDK, preserving existing claims.
    Never grant roles from browser code.
 4. Set backend `FIREBASE_WEB_API_KEY` and Secret Manager `AIRTABLE_TOKEN`,
-   `AIRTABLE_BASE`, `AIRTABLE_TABLE`. Use a separate staging table initially.
+   `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`. The server-only integration-config.json
+   records the supplied event Airtable IDs and tested sender. Use a separate
+   staging table initially. Keep `sms.enabled` false until credentials, billing,
+   schema, permissions and one controlled staging test are verified.
    Never put credentials in GitHub or frontend files.
 5. Deploy ONLY `functions,firestore:rules` with an explicit project ID after
    approval. Functions use Singapore region. Do not deploy Firebase Hosting or
@@ -78,3 +87,9 @@ the isolated preview with sample data only.
 Staff page: existing site address plus `?staff=1`. Session tokens stay in memory,
 expire, and are cleared on sign-out. No production staff credentials are bundled.
 Top-only engraving is implemented with five letters; the bottom has a fixed pre-engraved Nuvei logo. See EVENT-SETUP.md.
+
+Approved staff email: `siewping.fong@thegiftexpert.com`. This is a setup reference,
+not a grant of access: provision and verify the Firebase user and event claim.
+Customer records are retained for future reference as instructed; no automatic
+deletion job is enabled. Final privacy wording and production font specifications
+still need review before publishing. No secrets are stored in the repository.

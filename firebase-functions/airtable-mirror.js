@@ -1,3 +1,4 @@
+const settings = require('./integration-config.json').airtable;
 async function syncOrder({ db, orderRef, fetchImpl = fetch, env = process.env }) {
   let createStarted = false;
   let recordId;
@@ -9,8 +10,8 @@ async function syncOrder({ db, orderRef, fetchImpl = fetch, env = process.env })
   });
   if (!order) return;
   try {
-    if (!env.AIRTABLE_TOKEN || !env.AIRTABLE_BASE || !env.AIRTABLE_TABLE) throw new Error('Missing configuration');
-    const url = `https://api.airtable.com/v0/${encodeURIComponent(env.AIRTABLE_BASE)}/${encodeURIComponent(env.AIRTABLE_TABLE)}`;
+    if (!env.AIRTABLE_TOKEN) throw new Error('Missing configuration');
+    const url = `https://api.airtable.com/v0/${encodeURIComponent(env.AIRTABLE_BASE || settings.baseId)}/${encodeURIComponent(env.AIRTABLE_TABLE || settings.tableId)}`;
     const headers = { Authorization: `Bearer ${env.AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' };
     const request = async (target, options = {}) => {
       const result = await fetchImpl(target, { ...options, headers, signal: AbortSignal.timeout(8000) });

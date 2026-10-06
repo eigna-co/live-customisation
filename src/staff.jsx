@@ -82,6 +82,8 @@ export default function StaffScreen() {
         <h2>{order.ticket}</h2><p>{order.name} · {order.gift}</p>
         <p>Engraving: <strong>{order.decoration}</strong> · {order.font}</p><p>Status: <strong>{order.status}</strong></p>
         <p>Airtable: {order.mirrorState === 'Review' ? 'Needs reconciliation — do not create a second order' : order.mirrorState}</p>
+        <p>Collection SMS: {order.smsState === 'Accepted' ? `Submitted to Twilio (${order.smsProviderStatus || 'delivery not confirmed'})` : order.smsState === 'Review' || order.smsState === 'Sending' ? 'Check Twilio logs before any resend' : order.smsState === 'Blocked' ? 'Not sent — SMS setup required' : order.smsState || 'Not queued'}</p>
+        {order.smsState === 'Blocked' && <button disabled={busy} onClick={() => update(order, 'staff-retry-sms')}>Retry SMS after setup</button>}
         {advance[order.status] && <button disabled={busy} onClick={() => update(order)}>{order.status === 'Queued' ? 'Start engraving' : order.status === 'Decorating' ? 'Mark ready' : 'Confirm collected'}</button>}
         {['Error', 'Review', 'Processing'].includes(order.mirrorState) && <button disabled={busy} onClick={() => update(order, 'staff-retry-sync')}>{order.mirrorState === 'Review' ? 'Check existing Airtable copy' : order.mirrorState === 'Processing' ? 'Recover stalled sync (after 2 minutes)' : 'Retry Airtable sync'}</button>}
       </article>)}</div>

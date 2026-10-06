@@ -5,10 +5,11 @@ The browser and both hosting adapters use the same rules. This file is edited in
 code; it is not a staff administration screen.
 
 Configured from supplied requirements:
-- Nuvei, 20–21 October (year deliberately omitted pending confirmation).
+- Nuvei, 20–21 October 2026 (confirmed event dates).
 - Black travel adaptor: 50 per Singapore calendar day, 100 total across both dates.
-- One normalised contact number can claim one gift across the entire event;
-  email remains an order detail, not the uniqueness key. Existing validation accepts SG mobiles only.
+- One normalised email address can claim one gift across the entire event (trimmed,
+  case-insensitive). This replaces contact-number uniqueness: different emails may
+  share a phone number. Phone remains required for SMS; validation accepts SG mobiles only.
 - A final review displays the engraving, font and contact details. Customers must
   acknowledge checking the name/font and no cancellation before submission.
 - One to five letters; surrounding whitespace is trimmed, internal spaces,
@@ -43,21 +44,22 @@ front top/bottom placement are sufficient for the website draft. Final logo
 artwork, engraving size and physical measurements remain production details
 handled by the team. The allocation is confirmed as 50 per day, without rollover.
 
-## Event dates and contact-key migration
+## Event dates and email-key migration
 
-`schedule.year` remains null until the event year is confirmed. The live service fails
-closed until it is set, and rejects new orders outside 20–21 October in Asia/Singapore.
+`schedule.year` is 2026. The live service rejects new orders outside
+20–21 October 2026 in Asia/Singapore. A missing year still fails closed.
 Day stock documents use `adaptor-YYYY-MM-DD`; the total stock counter is also retained.
 Neither the guest nor staff chooses the redemption date. Successful request retries
 can recover their original receipt after a date change without reserving more stock.
-The isolated preview explicitly simulates 20 October 2026; this is NOT a confirmed event year.
+The isolated preview explicitly simulates 20 October 2026; it never changes the live clock.
 
-Order IDs now hash normalised contact numbers rather than email. Before applying this
-to a database that already contains email-keyed orders, migrate those records and
-their request/tracking links, deduplicate contacts and initialise day counters from
+Order IDs now hash normalised emails rather than contact numbers. Before applying this
+to a database that already contains contact-keyed orders, migrate those records and
+their request/tracking links, deduplicate emails and initialise day counters from
 the actual orders. Do not simply deploy over old data: that could permit duplicate gifts.
-No live database migration has been performed. SMS remains unconnected, pending provider,
-sender, credentials, costs and approved message text. The review does not promise an SMS.
+No live database migration has been performed. Twilio sender +18142643662 was tested
+successfully to Singapore. Angie accepts the Likely-SCAM label. Secure API credentials
+and deployment are still pending; the local SMS worker remains disabled.
 
 ## Airtable preparation before publishing
 
@@ -74,12 +76,13 @@ No live Airtable schema changes have been made.
 
 The new local backend reserves stock atomically in Firestore and blocks sold-out
 orders. Staff queue updates and collection confirmation are implemented locally.
-Airtable is a copy, not the stock authority. SMS is not implemented. Orders fail
+Airtable is a copy, not the stock authority. SMS is implemented locally, not connected. Orders fail
 closed when stock cannot be checked. Cloud setup and verification remain pending;
 see QUEUE-BACKEND-SETUP.md.
 
 Changes are prepared locally on `migration/firebase-preparation`. No domain
-change, deployment, Firebase project creation or billing change has been made.
+change, deployment or billing change has been made by this code. The user created
+`tgelive-1b68d` on Spark; `.firebaserc` now selects it for future explicit deployment.
 
 Verification includes automated validation/queue tests and isolated browser
 checks using sample details only. No order was submitted to a live service.

@@ -7,6 +7,7 @@ const { getAuth } = require('firebase-admin/auth');
 const { createHttpHandler } = require('./http-adapter');
 const { createQueueHandler } = require('./queue-service');
 const { syncOrder } = require('./airtable-mirror');
+const { notifyReady } = require('./sms-notification');
 const EVENT = require('./event-config.json');
 const webApiKey = defineString('FIREBASE_WEB_API_KEY', { default: '' });
 const getDb = () => { if (!getApps().length) initializeApp(); return getFirestore(); };
@@ -25,9 +26,20 @@ exports.mirrorOrders = onDocumentWritten({
   document: `events/${EVENT.id}/orders/{orderId}`,
   region: 'asia-southeast1', timeoutSeconds: 60, maxInstances: 2,
   retry: false,
-  secrets: ['AIRTABLE_TOKEN', 'AIRTABLE_BASE', 'AIRTABLE_TABLE'].map(name => defineSecret(name)),
+  secrets: ['AIRTABLE_TOKEN'].map(name => defineSecret(name)),
 }, async event => {
   if (event.data?.after.exists && event.data.after.data().mirrorState === 'Pending') {
     await syncOrder({ db: getDb(), orderRef: event.data.after.ref });
+  }
+});
+
+exports.notifyCollection = onDocumentWritten({
+  document: `events/${EVENT.id}/orders/{orderId}`,
+  region: 'asia-southeast1', timeoutSeconds: 30, maxInstances: 2,
+  retry: false,
+  secrets: ['TWILIO_ACCOUNT_SID', 'TWILIO_API_KEY', 'TWILIO_API_SECRET'].map(name => defineSecret(name)),
+}, async event => {
+  if (event.data?.after.exists && event.data.after.data().smsState === 'Pending') {
+    await notifyReady({ db: getDb(), orderRef: event.data.after.ref });
   }
 });

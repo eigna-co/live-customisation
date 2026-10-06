@@ -266,6 +266,13 @@ function Btn({ children, onClick, disabled, variant = 'primary', style = {} }) {
   );
 }
 
+function StepNavigation({ onBack, onNext, nextLabel = 'Next →', nextDisabled = false, busy = false }) {
+  return <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+    <Btn onClick={onBack} disabled={busy} variant="ghost" style={{ width: 104, flexShrink: 0, fontFamily: 'var(--body)', textTransform: 'none', letterSpacing: 'normal' }}>← Back</Btn>
+    <Btn onClick={onNext} disabled={nextDisabled || busy} style={{ flex: 1, minWidth: 0, fontFamily: 'var(--body)', textTransform: 'none', letterSpacing: 'normal' }}>{nextLabel}</Btn>
+  </div>;
+}
+
 function Field({ label, name, value, onChange, placeholder, type = 'text', hint, hintError, optional, maxLength, rightAdornment, autoComplete, inputMode }) {
   const [focused, setFocused] = useState(false);
   const inputId = useId();
@@ -549,7 +556,7 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
           label="Company email" name="email" autoComplete="email" inputMode="email"
           value={data.email} onChange={v => setData({ ...data, email: v })}
           placeholder="you@company.com" type="email" maxLength={254}
-          hint="Email is used for your order details. One gift per contact number across the event."
+          hint="One gift per email address across the whole event."
         />
         <Field
           label="Mobile" name="phone" autoComplete="tel" inputMode="tel"
@@ -559,9 +566,7 @@ function DetailsScreen({ data, setData, onNext, onBack, mobile }) {
         />
         <ConsentRow />
       </div>
-      <Btn onClick={onNext} disabled={!valid} style={{ flexShrink: 0 }}>
-        Next →
-      </Btn>
+      <StepNavigation onBack={onBack} onNext={onNext} nextDisabled={!valid} />
     </div>
   );
 }
@@ -623,7 +628,7 @@ function GiftPickerScreen({ gifts, selected, setSelected, onNext, onBack, showIn
           <GiftCard key={g.id} gift={g} selected={selected === g.id} onSelect={setSelected} showInventory={showInventory}/>
         ))}
       </div>
-      <Btn onClick={onNext} disabled={!selected || !(gifts.find(gift => gift.id === selected)?.remaining > 0)}>Next →</Btn>
+      <StepNavigation onBack={onBack} onNext={onNext} nextDisabled={!selected || !(gifts.find(gift => gift.id === selected)?.remaining > 0)} />
     </div>
   );
 }
@@ -673,7 +678,6 @@ function ReviewScreen({ gift, personalisation, font, data, onSubmit, onBack, sub
   useEffect(() => { heading.current?.focus(); }, []);
   return <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
     <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? '24px 20px' : '40px 24px' }}>
-      <button onClick={onBack} disabled={submitting}>← Edit engraving</button>
       <h1 ref={heading} tabIndex={-1} style={{ fontSize: 28 }}>Check before submitting.</h1>
       <p>Please check the spelling, capitalisation, font and contact number.</p>
       <TicketRow k="Gift" v={gift.name} />
@@ -683,7 +687,7 @@ function ReviewScreen({ gift, personalisation, font, data, onSubmit, onBack, sub
       <TicketRow k="For" v={data.name} />
       <TicketRow k="Contact" v={data.phone} />
       <TicketRow k="Email" v={data.email} />
-      <p>One gift per contact number for the whole event. Once submitted, you cannot cancel or change your engraving.</p>
+      <p>One gift per email address for the whole event. Once submitted, you cannot cancel or change your engraving.</p>
       <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', lineHeight: 1.5 }}>
         <input type="checkbox" checked={checked} disabled={submitting} onChange={event => setChecked(event.target.checked)} style={{ marginTop: 5 }} />
         I have checked my name and font and understand that no cancellation is allowed after submission.
@@ -691,7 +695,7 @@ function ReviewScreen({ gift, personalisation, font, data, onSubmit, onBack, sub
     </div>
     <div style={{ padding: mobile ? '12px 20px 20px' : '12px 24px 24px', borderTop: '1px solid var(--line)' }}>
       {submitError && <p role="alert">{submitError}</p>}
-      <Btn onClick={onSubmit} disabled={!checked || submitting}>{submitting ? 'Submitting…' : 'Submit order →'}</Btn>
+      <StepNavigation onBack={onBack} onNext={onSubmit} busy={submitting} nextDisabled={!checked || submitting} nextLabel={submitting ? 'Submitting…' : 'Submit order →'} />
     </div>
   </div>;
 }
@@ -767,9 +771,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
             {submitError}
           </div>
         )}
-        <Btn onClick={() => setReviewing(true)} disabled={!valid || submitting}>
-          Review order →
-        </Btn>
+        <StepNavigation onBack={onBack} onNext={() => setReviewing(true)} busy={submitting} nextDisabled={!valid} nextLabel="Review order →" />
       </div>
     </div>
   );
@@ -1093,7 +1095,10 @@ function App() {
   const gifts = INITIAL_GIFTS.map(gift => ({ ...gift, remaining: inventory[gift.id] }));
   const selectedGift = gifts.find(g => g.id === selectedGiftId);
 
-  const go = (s) => setStep(s);
+  const go = (s) => {
+    if (submissionInFlight.current || ticket) return;
+    setStep(s);
+  };
   const restart = () => {
     setData({ name: '', company: '', email: '', phone: '+65' });
     setSelectedGiftId(null);
@@ -1155,7 +1160,6 @@ function App() {
     } catch (error) {
       if (error.code === 'sold-out') { setSubmitError('This gift has sold out. Please ask the event team.'); refreshInventory(); }
       else if (error.code === 'duplicate-email') setSubmitError('This email has already been used. Ask the event team to find your order; do not submit another email.');
-      else if (error.code === 'duplicate-contact') setSubmitError('This contact number has already claimed a gift for this event. Please ask the event team to find your order.');
       else if (error.code === 'event-closed') setSubmitError('Orders are only accepted on the event dates. Please check with the event team.');
       else if (error.status === 409) setSubmitError('Your request changed or was already used. Please ask the event team for help.');
       else if (error.status === 429) setSubmitError('The service is busy. Please wait a minute and try again.');
@@ -1184,7 +1188,7 @@ function App() {
     4: <TicketScreen ticket={ticket} gift={selectedGift} personalisation={personalisation}
           trackingToken={trackingToken}
           fontId={fontId}
-          data={data} onCollect={() => go(5)} mobile={isPhone} />,
+          data={data} onCollect={() => setStep(5)} mobile={isPhone} />,
     5: <DoneScreen data={data} gift={selectedGift} personalisation={personalisation} onRestart={restart} mobile={isPhone} />,
   };
 

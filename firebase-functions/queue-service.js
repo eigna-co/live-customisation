@@ -44,7 +44,7 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
     const product = eventConfig.products.find(product => product.name.toLowerCase() === details.gift);
     const fingerprint = digest(JSON.stringify(details));
     const db = getDb();
-    const orderId = digest(details.phone);
+    const orderId = digest(details.email);
     const orderRef = db.doc(`${paths.root}/orders/${orderId}`);
     const requestRef = db.doc(`${paths.root}/requests/${request.requestId}`);
     // Generate these once, outside the callback: Firestore may retry transactions.
@@ -57,7 +57,7 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
         if (!existing.exists) fail(503, 'Please contact the event team with your reference.');
         return { ...receipt(existing.data()), replayed: true };
       }
-      if (existing.exists) fail(409, 'This contact number has already claimed a gift for this event.', 'duplicate-contact');
+      if (existing.exists) fail(409, 'This email has already claimed a gift for this event.', 'duplicate-email');
       const at = now();
       const day = eventDay(at);
       if (!day) fail(409, 'Orders are only accepted on the event dates.', 'event-closed');
@@ -134,8 +134,8 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
         await staff(event);
         const snap = await getDb().collection(`${paths.root}/orders`).orderBy('createdAt', 'asc').limit(200).get();
         return reply(200, { orders: snap.docs.map(doc => {
-          const { name, gift, decoration, font, ticket, status, version, createdAt, mirrorState } = doc.data();
-          return { id: doc.id, name, gift, decoration, font, ticket, status, version, createdAt, mirrorState };
+          const { name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState, smsProviderStatus } = doc.data();
+          return { id: doc.id, name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState: smsState || 'Not queued', smsProviderStatus: smsProviderStatus || null };
         }), ...await availability() });
       }
       if (request.action === 'staff-update-status') {
@@ -150,11 +150,26 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
           if (order.status === request.status) return { status: order.status, version: order.version };
           if (order.version !== request.version) fail(409, 'Another staff member updated this order. Refresh and try again.');
           if (nextStatus[order.status] !== request.status) fail(422, 'Invalid queue status change.');
-          tx.update(ref, { status: request.status, version: order.version + 1, updatedAt: now(), mirrorState: ['Processing', 'Review'].includes(order.mirrorState) ? order.mirrorState : 'Pending' });
+          tx.update(ref, { status: request.status, version: order.version + 1, updatedAt: now(), mirrorState: ['Processing', 'Review'].includes(order.mirrorState) ? order.mirrorState : 'Pending', ...(request.status === 'Ready' && !order.smsState ? { smsState: 'Pending' } : {}) });
           tx.create(ref.collection('audit').doc(), { from: order.status, to: request.status, staffUid: identity.uid, at: now() });
           return { status: request.status, version: order.version + 1 };
         });
         return reply(200, result);
+      }
+      if (request.action === 'staff-retry-sms') {
+        const identity = await staff(event);
+        if (!/^[a-f0-9]{64}$/.test(request.orderId || '')) fail(422, 'Invalid order reference.');
+        const db = getDb();
+        const ref = db.doc(`${paths.root}/orders/${request.orderId}`);
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(ref);
+          if (!snap.exists) fail(404, 'Order not found.');
+          const order = snap.data();
+          if (!['Ready', 'Collected'].includes(order.status) || order.smsState !== 'Blocked' || order.smsAttempted) fail(409, 'Check Twilio logs. An attempted SMS cannot be automatically resent.');
+          tx.update(ref, { smsState: 'Pending' });
+          tx.create(ref.collection('audit').doc(), { action: 'retry-blocked-sms', staffUid: identity.uid, at: now() });
+        });
+        return reply(200, { queued: true });
       }
       if (request.action === 'staff-retry-sync') {
         await staff(event);
