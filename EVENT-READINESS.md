@@ -1,4 +1,4 @@
-# Nuvei readiness — 7 October 2026
+# Nuvei readiness — 8 October 2026
 
 ## Completed
 
@@ -7,8 +7,9 @@
   anonymous staff operations are rejected. Domains remain unchanged.
 - Blaze billing approved, Singapore Firestore with deny-all client rules, core
   backend and event-only staff authentication deployed.
-- Staff accounts provisioned. Test account email verified and local cloud login
-  tested; Siew Ping still needs email verification and her own live sign-in.
+- Test staff account verified, enabled and has the Nuvei role (rechecked 8 October).
+  Siew Ping's supplied email currently returns user-not-found in Firebase; she
+  needs an account, verification, event role and her own live sign-in.
 - 50 gifts per Singapore day on 20–21 October 2026; 100 total with no rollover.
 - One gift per normalised email; top-only engraving, fixed bottom logo.
 - Five-letter limit removed. Longer names shrink in the approximate preview;
@@ -27,17 +28,22 @@
   notification acceptance and Collected with a fake SMS provider. Duplicate worker
   calls send once; uncertain responses cannot be retried by staff. This is not a
   deployed Firestore-trigger test. See COLLECTION-REHEARSAL.md.
-- All 92 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- On 8 October, an isolated deployed Firestore trigger using the same notification
+  handler submitted exactly one approved SMS; Twilio reports delivered, no error.
+  No live orders or inventory changes. Fixed the default-app startup bug discovered
+  by this test and deployed the fix to the backend, SMS and balance workers.
+- All 95 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off
 
 1. Airtable owner adds the missing Font text field and provides write access;
-   current account is read-only. Keep its old SMS automation off.
+   current account is read-only. Font is still missing on the 8 October read-only
+   API check; no customer records were returned. Keep its old SMS automation off.
 2. Isolated Airtable create/status/reconciliation test, then deploy mirror worker.
-3. Controlled Ready → SMS deployed-trigger test. Worker deployment and local
-   service rehearsal are complete; a real end-to-end trigger/handset test remains
-   unperformed. A new test SMS needs recipient/send approval.
+3. Final production-path rehearsal after staff onboarding/Airtable setup. The
+   isolated deployed trigger/shared SMS handler has passed; a customer submission
+   through live HTTP and staff Ready action has not been exercised end-to-end.
 4. Production engraving dimensions, text size, matching font files and allowed
    characters. Browser font fallbacks are not final production artwork.
 5. Owning Netlify team checks current plan and remaining usage; current login cannot
