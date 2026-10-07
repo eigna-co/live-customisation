@@ -34,7 +34,11 @@
   handler submitted exactly one approved SMS; Twilio reports delivered, no error.
   No live orders or inventory changes. Fixed the default-app startup bug discovered
   by this test and deployed the fix to the backend, SMS and balance workers.
-- All 95 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- Customer and staff copy reviewed: removed draft production notes and preview
+  overlays, simplified status/connection wording, and replaced raw Error/Processing
+  labels with useful instructions. Closed event is no longer labelled sold out.
+  Browser walkthrough used the isolated trial only; no real SMS or orders.
+- All 99 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off

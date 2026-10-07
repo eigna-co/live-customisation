@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { mirrorLabel, smsLabel, staffMessage } from './staff-copy';
 
 async function api(action, payload = {}, token) {
   const response = await fetch('/api/redemptions', {
@@ -39,7 +40,7 @@ export default function StaffScreen() {
       if (sessionRef.current?.token !== token) return;
       if ([401, 403].includes(error.status)) logout();
       setTwilioBalance({ state: 'Unavailable' });
-      setError(error.message);
+      setError(staffMessage(error));
     } finally { refreshInFlight.current = false; }
   }
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function StaffScreen() {
       const result = await api('staff-sign-in', { email, password });
       const next = { token: result.idToken, expiresAt: Date.now() + result.expiresIn * 1000 };
       setPassword(''); sessionRef.current = next; setSession(next);
-    } catch (error) { setError(error.message); setPassword(''); }
+    } catch (error) { setError(staffMessage(error)); setPassword(''); }
     finally { setBusy(false); }
   }
   async function update(order, action = 'staff-update-status') {
@@ -64,7 +65,7 @@ export default function StaffScreen() {
     try {
       await api(action, { orderId: order.id, version: order.version, status: advance[order.status] }, sessionRef.current.token);
       await refresh();
-    } catch (error) { setError(error.message); if ([401, 403].includes(error.status)) logout(); }
+    } catch (error) { setError(staffMessage(error)); if ([401, 403].includes(error.status)) logout(); }
     finally { setBusy(false); }
   }
   const lowBalance = twilioBalance?.state === 'Low';
@@ -85,7 +86,7 @@ export default function StaffScreen() {
       {twilioBalance && <p role="status">{twilioBalance.state === 'Unavailable' ? 'Twilio balance unavailable — please check the Twilio console.' : `Twilio balance: ${balanceAmount}${lowBalance ? ' — top-up recommended' : ''}. Last checked ${new Date(twilioBalance.checkedAt).toLocaleString()}.`}</p>}
       {lowBalance && !balanceDismissed && <aside role="status" aria-label="Twilio low balance notice" style={{ position: 'fixed', bottom: 16, left: 16, right: 16, maxWidth: 540, margin: '0 auto', padding: 16, background: '#FFF1F2', color: '#160850', border: '1px solid #FDA4AF', borderRadius: 16, boxShadow: '0 4px 20px #16085020', zIndex: 20 }}>
         <strong>Collection SMS balance is low</strong>
-        <p style={{ margin: '8px 0' }}>Twilio has {balanceAmount} remaining (warning level: US${twilioBalance.threshold}). Please arrange a top-up to help keep collection SMS running. No automatic top-up is made.</p>
+        <p style={{ margin: '8px 0' }}>Balance: {balanceAmount}. Please top up Twilio to keep collection messages running.</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}><a href="https://console.twilio.com/" target="_blank" rel="noopener noreferrer">Open Twilio</a><button type="button" onClick={() => setBalanceDismissed(true)}>Dismiss</button></div>
       </aside>}
       <div>{products.map(product => <p key={product.id}>Available: {product.remaining}</p>)}</div>
@@ -94,11 +95,11 @@ export default function StaffScreen() {
       <div className="staff-orders">{orders.filter(order => filter === 'All' || (filter === 'Active' ? order.status !== 'Collected' : order.status === filter)).map(order => <article key={order.id}>
         <h2>{order.ticket}</h2><p>{order.name} · {order.gift}</p>
         <p>Engraving: <strong>{order.decoration}</strong> · {order.font}</p><p>Status: <strong>{statusLabel(order.status)}</strong></p>
-        <p>Airtable: {order.mirrorState === 'Review' ? 'Needs reconciliation — do not create a second order' : order.mirrorState}</p>
-        <p>Collection SMS: {order.smsState === 'Accepted' ? `Submitted to Twilio (${order.smsProviderStatus || 'delivery not confirmed'})` : order.smsState === 'Review' || order.smsState === 'Sending' ? 'Check Twilio logs before any resend' : order.smsState === 'Blocked' ? 'Not sent — SMS setup required' : order.smsState || 'Not queued'}</p>
+        <p>Airtable: {mirrorLabel(order.mirrorState)}</p>
+        <p>Collection SMS: {smsLabel(order)}</p>
         {order.smsState === 'Blocked' && <button disabled={busy} onClick={() => update(order, 'staff-retry-sms')}>Retry SMS after setup</button>}
         {advance[order.status] && <button disabled={busy} onClick={() => update(order)}>{order.status === 'Queued' ? 'Start engraving' : order.status === 'Decorating' ? 'Mark ready' : 'Confirm collected'}</button>}
-        {['Error', 'Review', 'Processing'].includes(order.mirrorState) && <button disabled={busy} onClick={() => update(order, 'staff-retry-sync')}>{order.mirrorState === 'Review' ? 'Check existing Airtable copy' : order.mirrorState === 'Processing' ? 'Recover stalled sync (after 2 minutes)' : 'Retry Airtable sync'}</button>}
+        {['Error', 'Review', 'Processing'].includes(order.mirrorState) && <button disabled={busy} onClick={() => update(order, 'staff-retry-sync')}>{order.mirrorState === 'Review' ? 'Check Airtable record' : order.mirrorState === 'Processing' ? 'Retry sync after 2 minutes' : 'Retry sync'}</button>}
       </article>)}</div>
     </>}
   </main>;

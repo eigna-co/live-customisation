@@ -595,7 +595,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
       onClick={() => !out && !unknown && onSelect(gift.id)}
       disabled={out || unknown}
       aria-pressed={selected}
-      aria-label={`${gift.name}. ${unknown ? 'Checking stock' : out ? 'Sold out' : 'Available to personalise'}`}
+      aria-label={`${gift.name}. ${gift.eventClosed ? 'Orders open on the event dates' : unknown ? 'Checking stock' : out ? 'Sold out' : 'Available to personalise'}`}
       style={{
         width: '100%', textAlign: 'left', padding: 0, cursor: out ? 'not-allowed' : 'pointer',
         background: 'var(--surface)', borderRadius: 18,
@@ -624,7 +624,7 @@ function GiftCard({ gift, selected, onSelect, showInventory }) {
               fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase',
               color: out ? '#ff4d4d' : 'var(--fg-dim)', marginTop: 6,
             }}>
-              {unknown ? 'Checking stock…' : out ? '◆ Sold out' : `${gift.remaining} available`}
+              {gift.eventClosed ? `Orders open ${EVENT.dateLabel}` : unknown ? 'Checking stock…' : out ? 'Sold out' : `${gift.remaining} available`}
             </div>
           )}
         </div>
@@ -697,7 +697,7 @@ function ReviewScreen({ gift, personalisation, font, data, onSubmit, onBack, sub
       <h1 ref={heading} tabIndex={-1} style={{ fontSize: 28 }}>Check before submitting.</h1>
       <p>Please check the spelling, capitalisation, font and contact number.</p>
       <TicketRow k="Gift" v={gift.name} />
-      <TicketRow k="Top name" v={personalisation.trim().normalize('NFC')} highlight />
+      <TicketRow k="Engraving" v={personalisation.trim().normalize('NFC')} highlight />
       <TicketRow k="Font" v={font.name} />
       <TicketRow k="Bottom" v="Pre-engraved Nuvei logo" />
       <TicketRow k="For" v={data.name} />
@@ -740,18 +740,6 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
             stickerImg={selectedSticker?.img || null}
             font={selectedFont}
           />
-          <div style={{
-            position: 'absolute', top: 12, left: 14,
-            fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.5, color: 'var(--fg-dim)', textTransform: 'uppercase',
-          }}>
-            Placement preview · {gift.name}
-          </div>
-          <div style={{
-            position: 'absolute', bottom: 10, right: 14,
-            fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: 1.2, color: 'var(--fg-dim)',
-          }}>
-            TEXT PLACEMENT IS APPROXIMATE
-          </div>
         </div>
 
         {isSticker ? (
@@ -774,7 +762,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
               {font.name}
             </label>
           ))}
-          <p style={{ fontSize: 12, color: 'var(--fg-dim)' }}>Preview sizing is approximate, not a production template. Engraving height and minimum readable text size need production confirmation; very long names may be too small to engrave clearly. Fonts may vary by device.</p>
+          <p style={{ fontSize: 12, color: 'var(--fg-dim)' }}>Preview only. Final engraving may vary.</p>
         </fieldset>
       </div>
 
@@ -873,7 +861,7 @@ function TicketScreen({ ticket, gift, personalisation, fontId, data, onCollect, 
           {{ Queued: 'Order received', Decorating: 'Engraving in progress', Ready: 'Ready for collection', Collected: 'Collected' }[status] || 'Order received'}
         </div>
         <div style={{ marginTop: 4, fontFamily: 'var(--body)', fontSize: 13, opacity: 0.75 }}>
-          {offline ? 'Cannot refresh status. Your order is saved; ask the event team for updates.' : 'Show your order reference to the event team. Status refreshes automatically while this screen is open.'}
+          {offline ? 'Your order is saved. Ask the booth team for a status update.' : 'Show your order reference when collecting at the booth.'}
         </div>
       </div>
 
@@ -898,7 +886,7 @@ function DoneScreen({ onRestart, data, gift, personalisation, mobile }) {
           </span>
         </h1>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 12 }}>
-          Your order for a <b style={{ color: 'var(--fg)' }}>{gift.name}</b>, personalised with <b style={{ color: 'var(--fg)' }}>{personalisation}</b> at the top, has been saved. The bottom has a pre-engraved Nuvei logo. Please check with the event team before collecting.
+          Your <b style={{ color: 'var(--fg)' }}>{gift.name}</b> order is saved. We’ll send you an SMS when it’s ready to collect at the booth.
         </div>
         <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--fg-dim)', lineHeight: 1.5, marginBottom: 30 }}>
           Show it off. Tag{' '}
@@ -1087,6 +1075,7 @@ function App() {
 
   const [inventory, setInventory] = useState({});
   const [inventoryError, setInventoryError] = useState('');
+  const [eventClosed, setEventClosed] = useState(false);
   const inventoryInFlight = useRef(false);
   const refreshInventory = async () => {
     if (inventoryInFlight.current) return;
@@ -1095,6 +1084,7 @@ function App() {
       const result = await airtableRequest('get-availability');
       if (!Array.isArray(result.products)) throw new Error('Invalid availability');
       setInventory(Object.fromEntries(result.products.map(product => [product.id, product.remaining])));
+      setEventClosed(result.eventClosed === true);
       setInventoryError('');
     } catch {
       setInventory({});
@@ -1106,7 +1096,7 @@ function App() {
     const interval = setInterval(refreshInventory, 30000);
     return () => clearInterval(interval);
   }, []);
-  const gifts = INITIAL_GIFTS.map(gift => ({ ...gift, remaining: inventory[gift.id] }));
+  const gifts = INITIAL_GIFTS.map(gift => ({ ...gift, remaining: inventory[gift.id], eventClosed }));
   const selectedGift = gifts.find(g => g.id === selectedGiftId);
 
   const go = (s) => {
@@ -1180,7 +1170,7 @@ function App() {
       else if (error.status === 429) setSubmitError('The service is busy. Please wait a minute and try again.');
       else if (error.status === 422) setSubmitError('Please check your details and personalisation, then try again.');
       else if (error.name === 'AbortError') setSubmitError('The request timed out. Please check your connection and try again.');
-      else setSubmitError('Submission failed. Please check your connection and try again.');
+      else setSubmitError('Could not submit your order. Please check your connection and try again.');
     }
     submissionInFlight.current = false;
     setSubmitting(false);
@@ -1189,7 +1179,7 @@ function App() {
   const screenMap = {
     0: <WelcomeScreen
           eventName={tweaks.eventName} venue={tweaks.venue}
-          lineCopy={<>Personalise your Nuvei travel adaptor with your name, resized to fit the provisional 3.5 cm engraving width. The Nuvei logo is already engraved below. Choose a font and collect on-site with <em>The Gift Expert</em>.</>}
+          lineCopy={<>Personalise your travel adaptor. Choose your text and font, then collect at the booth.</>}
           onStart={() => go(1)} mobile={isPhone} />,
     1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
     2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}

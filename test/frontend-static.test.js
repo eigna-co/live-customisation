@@ -7,6 +7,11 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.jsx'), 'utf8');
 const netlifyConfig = fs.readFileSync(path.join(__dirname, '..', 'netlify.toml'), 'utf8');
 
+test('guest copy has no draft production notes or debug success messages', () => {
+  assert.doesNotMatch(source, /provisional 3\.5|not a production template|need production confirmation|Retouched product preview|no errors|No errors/);
+  assert.match(source, /Orders open \$\{EVENT\.dateLabel\}/);
+});
+
 test('Nuvei personalisation exposes only top text and a fixed logo below', () => {
   assert.doesNotMatch(source, /bottomPersonalisation|bottomName|DecorationBottom|label="Bottom engraving"|both areas/);
   assert.match(source, /label="Top engraving"/);
