@@ -11,7 +11,7 @@ const { syncOrder } = require('./airtable-mirror');
 const { notifyReady } = require('./sms-notification');
 const { checkBalance } = require('./twilio-balance');
 const EVENT = require('./event-config.json');
-const webApiKey = defineString('FIREBASE_WEB_API_KEY', { default: '' });
+const webApiKey = defineString('EVENT_WEB_API_KEY', { default: '' });
 const getDb = () => { if (!getApps().length) initializeApp(); return getFirestore(); };
 const handler = createQueueHandler({ getDb, verifyToken: token => { getDb(); return getAuth().verifyIdToken(token, true); }, webApiKey: () => webApiKey.value() });
 

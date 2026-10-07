@@ -72,6 +72,17 @@ test('staff access requires verified, event-authorised, non-revoked identity', a
   for (const [token, status] of [[undefined, 401], ['expired', 401], ['other', 403], ['unverified', 403], ['allowed', 200]]) assert.equal((await call('staff-list-orders', {}, token)).httpStatus, status);
   assert.equal((await call('staff-sign-in', { email: 'staff@example.test', password: 'test-only' })).idToken, 'allowed');
 });
+test('every staff mutation rejects missing, revoked, wrong-event and unverified accounts without database writes', async () => {
+  const { db, call } = setup();
+  const before = [...db.rows.entries()];
+  for (const action of ['staff-update-status', 'staff-retry-sms', 'staff-retry-sync']) {
+    for (const [token, expected] of [[undefined, 401], ['expired', 401], ['other', 403], ['unverified', 403]]) {
+      const result = await call(action, { orderId: 'a'.repeat(64), status: 'Ready', version: 0 }, token);
+      assert.equal(result.httpStatus, expected, `${action}: ${token || 'anonymous'}`);
+      assert.deepEqual([...db.rows.entries()], before);
+    }
+  }
+});
 test('staff changes are ordered, conflict-checked and audited; tracking exposes no personal data', async () => {
   const { db, call, create } = setup();
   const receipt = await create();

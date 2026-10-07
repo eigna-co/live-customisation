@@ -1,10 +1,59 @@
-# Event queue backend — local preparation only
+# Event queue backend — setup in progress
 
 Keep the current Netlify address. Firebase supplies the order service, Firestore
 database and staff authentication; Airtable receives an asynchronous event copy.
-The user created `tgelive-1b68d` on Spark; `.firebaserc` selects it locally.
-No backend has been deployed or provisioned. No billing, domain, staff account or
-live Airtable schema has been changed.
+The user created `tgelive-1b68d`; `.firebaserc` selects it locally.
+On 7 October 2026 the console confirmed Blaze billing, and setup permissions
+became available for jerryl@evfy.sg. The default Standard Firestore database was
+created in asia-southeast1 (Singapore) with production deny-all client rules and
+no optional scheduled backups. Firebase Authentication email/password sign-in is
+enabled; passwordless sign-in remains disabled. The user created the approved
+staff account siewping.fong@thegiftexpert.com. Its eventStaff claim is now `nuvei`,
+verified through the Admin SDK; email verification is still pending. No Firebase
+administrator permissions were granted. Firebase CLI 15.32.1 is authenticated as jerryl@evfy.sg.
+The deployed staff sign-in flow sends a Firebase verification email after a
+successful password sign-in by approved, unverified staff; no session or queue
+data is returned until verified. All 81 tests pass. No real verification email
+has been sent by the agent; the user must sign in with their private password.
+The loopback-only `scripts/preview-staff-cloud.mjs` on port 4182 connects to the
+real API for staff login/read-only queue checks. Its allowlist rejects order
+creation and status changes (HTTP 403, verified). Do not deploy this script.
+The user also created `jerryl@evfy.sg` as the test staff login. On 7 October the
+Admin SDK granted and verified its `eventStaff: "nuvei"` claim, preserving any
+existing claims. The account is enabled; its email verification was subsequently
+confirmed by a read-only Admin SDK lookup. The user signed in successfully through
+the Firebase-connected local staff page, which displayed the empty queue.
+The zero available stock is expected outside event dates. The balance monitor is
+now deployed and enabled; the staff page displays the cached US$13.09 balance.
+This application account is separate from Google/Firebase console IAM access.
+The provisioning script now requires an explicit allow-listed email argument.
+The Airtable collaborator dialog confirms jerryl@evfy.sg has Read only access.
+Angie is the workspace owner. The missing `Font` single-line-text column remains
+a setup blocker: an authorised creator/owner must add it. Do not change sharing
+permissions or read/write customer records to work around this restriction.
+The TGE Live Queue web app is registered. The core `redemptions` function and
+deny-all client database rules are deployed in Singapore. The API endpoint is
+https://redemptions-s3i7tgf25a-as.a.run.app. Read-only smoke checks confirmed
+transactional mode, staff login configuration, unauthenticated staff rejection
+(HTTP 401), and orders closed outside the configured 20/21 October event dates.
+Secret Manager is enabled. The user saved all five integration secret entries:
+`AIRTABLE_TOKEN`, `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, and
+`TWILIO_BALANCE_AUTH_TOKEN`. Values were not opened in the browser or printed.
+Read-only provider checks used the stored credentials privately: Twilio Balance
+API succeeded (USD 13.0875 on 7 October), and Airtable accepted the token but the
+zero-record required-field check failed because `Font` is missing. No customer
+records were read or created. SMS key authentication has not been tested because
+its restricted key permits message creation only; an approved test SMS is needed.
+Airtable/SMS workers are not deployed. The balance-only scheduled worker is live,
+and the live frontend is not connected to this API yet. The domain and
+live Airtable schema remain unchanged. No live SMS was sent during this setup.
+The backend public web API key setting was renamed to `EVENT_WEB_API_KEY` because
+Firebase reserves the `FIREBASE_` prefix. The official Functions Framework was
+added because Google's pnpm cloud build requires it. All 81 local tests passed
+after the balance monitor setup; both builds passed after the setting rename.
+The CLI confirmed the function update succeeded but exited with a warning that
+Artifact Registry has no image cleanup policy. No automatic deletion policy was
+enabled; set an approved retention policy to limit accumulated build-image costs.
 
 ## Implemented locally
 
@@ -39,6 +88,17 @@ resumable tracking link. Staff can find lost references in the authenticated que
 
 ## Local checks
 
+Run `pnpm verify:release` for the automated local test suite and both production
+builds. It stops on the first failure and never deploys or publishes anything.
+Run `pnpm check:cloud` for nine non-mutating checks of the exact deployed event
+API: configuration, public availability, anonymous rejection on all four staff
+operations, invalid tracking, malformed JSON and unsupported HTTP methods.
+All nine passed on 7 October 2026. No sign-in attempts, customer record reads,
+orders or SMS are performed. Malformed JSON is rejected by Google's HTTP
+framework before the application handler, so its response format is platform-owned.
+The added staff mutation regression test verifies missing, revoked, wrong-event
+and unverified identities cannot write any records across all three mutations.
+
 Install root and separate `firebase-functions` dependencies using frozen lockfiles.
 Run `node --test --test-isolation=none test/*.test.js`, then both
 `node scripts/build-firebase.mjs` and `node scripts/build.mjs`.
@@ -64,7 +124,7 @@ the isolated preview with sample data only.
 3. Approve actual staff email addresses and verify their accounts. A trusted admin
    grants the event custom claim using Admin SDK, preserving existing claims.
    Never grant roles from browser code.
-4. Set backend `FIREBASE_WEB_API_KEY` and Secret Manager `AIRTABLE_TOKEN`,
+4. Set backend `EVENT_WEB_API_KEY` and Secret Manager `AIRTABLE_TOKEN`,
    `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`. The server-only integration-config.json
    records the supplied event Airtable IDs and tested sender. Use a separate
    staging table initially. Keep `sms.enabled` false until credentials, billing,
@@ -94,7 +154,7 @@ Customer records are retained for future reference as instructed; no automatic
 deletion job is enabled. Final privacy wording and production font specifications
 still need review before publishing. No secrets are stored in the repository.
 
-### Twilio balance notice (prepared, not live)
+### Twilio balance notice (live backend, local staff preview)
 
 The staff page shows a small, dismissible, non-modal notice when the last verified
 USD balance is US$5 or less. Dismissal lasts only for the current page visit;
@@ -108,9 +168,17 @@ instead of treating the account as funded. This is not real-time monitoring or a
 guarantee that SMS will be delivered; trial restrictions and number rental still
 apply. The threshold is configurable in `integration-config.json`.
 
-Before activating, an authorised administrator must enable Blaze/billing, store
-`TWILIO_BALANCE_AUTH_TOKEN` in Secret Manager (never in chat or Git), verify it
-belongs to `TWILIO_ACCOUNT_SID`, enable `balanceMonitor.enabled`, deploy the
-scheduled worker, and verify its first check. The auth token is bound only to
-this private worker, not the browser or public queue API. Scheduler and backend
-usage may incur charges. Monitoring remains disabled until that setup is done.
+On 7 October 2026 the scheduled worker was deployed. Cloud Scheduler confirmed
+the exact `firebase-schedule-monitorTwilioBalance-asia-southeast1` job is ENABLED
+with an every-60-minutes schedule. A manual invocation of that managed job
+updated the cache to USD 13.0875; the later check time was verified by a read-only
+Firestore lookup. This proves the cloud worker can read its secrets, query Twilio
+and save the balance, independently of the local setup helper. The auth token is
+bound only to this private worker, not the browser or public queue API. Scheduler
+and backend usage may incur charges. No SMS or top-up was performed.
+
+`scripts/check-live-balance.cjs` supports `--read-cache` (no secret access or
+writes) and `--verify-schedule` (verifies and manually runs only this exact
+balance job). Its default mode queries Twilio and updates only the balance cache.
+It authenticates using the approved administrator's local Firebase CLI session
+and does not print credentials. The existing Netlify site is unchanged.

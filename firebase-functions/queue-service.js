@@ -128,7 +128,18 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
         });
         const data = await response.json();
         if (!response.ok || !data.idToken) fail(401, 'Unable to sign in. Check your details or contact the event administrator.');
-        await staff({ headers: { authorization: `Bearer ${data.idToken}` } });
+        let identity;
+        try { identity = await verifyToken(data.idToken); } catch { fail(401, 'Unable to verify your session. Please sign in again.'); }
+        if (identity.eventStaff !== config.id) fail(403, 'This account does not have access to this event.');
+        if (identity.email_verified !== true) {
+          const verification = await authFetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(key)}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestType: 'VERIFY_EMAIL', idToken: data.idToken }),
+            signal: AbortSignal.timeout(10000),
+          });
+          if (!verification.ok) fail(403, 'Your email needs verification. The verification email could not be sent; please contact the event administrator.', 'verification-required');
+          fail(403, 'A verification email has been sent. Check your inbox or spam folder, open the link, then sign in again.', 'verification-required');
+        }
         return reply(200, { idToken: data.idToken, expiresIn: Number(data.expiresIn) || 3600 });
       }
       if (request.action === 'staff-list-orders') {

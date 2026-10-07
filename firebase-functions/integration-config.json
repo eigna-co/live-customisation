@@ -4,7 +4,7 @@
     "tableId": "tblj0ReKCFJmEf9x3"
   },
   "balanceMonitor": {
-    "enabled": false,
+    "enabled": true,
     "lowBalanceUsd": 5
   },
   "sms": {
