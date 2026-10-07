@@ -511,11 +511,11 @@ function WelcomeScreen({ onStart, eventName, venue, lineCopy, mobile }) {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
         <h1 tabIndex="-1" style={{
-          fontFamily: 'var(--display)', fontSize: 56, fontWeight: 800,
-          lineHeight: 0.92, letterSpacing: -2.5, color: 'var(--fg)', textTransform: 'uppercase', margin: 0, outline: 'none',
+          fontFamily: 'var(--body)', fontSize: mobile ? 34 : 38, fontWeight: 600,
+          lineHeight: 1.15, letterSpacing: 'normal', color: 'var(--fg)', margin: 0, outline: 'none',
         }}>
           Live<br/>
-          <span style={{ color: 'var(--accent-text)', fontStyle: 'italic', fontWeight: 500 }}>custom.</span><br/>
+          custom.<br/>
           Booth.
         </h1>
         <div style={{

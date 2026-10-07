@@ -12,6 +12,12 @@ test('guest copy has no draft production notes or debug success messages', () =>
   assert.match(source, /Orders open \$\{EVENT\.dateLabel\}/);
 });
 
+test('welcome heading retains the Live custom Booth wording in regular readable type', () => {
+  const welcome = source.slice(source.indexOf('function WelcomeScreen'), source.indexOf('function DetailsScreen'));
+  assert.match(welcome, /Live<br\/>\s+custom\.<br\/>\s+Booth\./);
+  assert.doesNotMatch(welcome, /fontStyle: 'italic'|letterSpacing: -2\.5/);
+});
+
 test('Nuvei personalisation exposes only top text and a fixed logo below', () => {
   assert.doesNotMatch(source, /bottomPersonalisation|bottomName|DecorationBottom|label="Bottom engraving"|both areas/);
   assert.match(source, /label="Top engraving"/);

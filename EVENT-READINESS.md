@@ -38,7 +38,8 @@
   overlays, simplified status/connection wording, and replaced raw Error/Processing
   labels with useful instructions. Closed event is no longer labelled sold out.
   Browser walkthrough used the isolated trial only; no real SMS or orders.
-- All 99 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- Welcome heading keeps “Live custom Booth” with normal type and spacing.
+- All 100 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off
