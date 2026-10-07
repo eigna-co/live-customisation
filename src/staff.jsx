@@ -23,7 +23,9 @@ export default function StaffScreen() {
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState('Active');
   const [lastUpdated, setLastUpdated] = useState(null);
-  const logout = () => { sessionRef.current = null; setSession(null); setOrders([]); setProducts([]); setLoaded(false); setLastUpdated(null); };
+  const [twilioBalance, setTwilioBalance] = useState(null);
+  const [balanceDismissed, setBalanceDismissed] = useState(false);
+  const logout = () => { sessionRef.current = null; setSession(null); setOrders([]); setProducts([]); setLoaded(false); setLastUpdated(null); setTwilioBalance(null); setBalanceDismissed(false); };
   async function refresh(token = sessionRef.current?.token) {
     if (!token || refreshInFlight.current) return;
     refreshInFlight.current = true;
@@ -31,9 +33,11 @@ export default function StaffScreen() {
       const data = await api('staff-list-orders', {}, token);
       if (sessionRef.current?.token !== token) return;
       setOrders(data.orders); setProducts(data.products); setLoaded(true); setLastUpdated(new Date()); setError('');
+      setTwilioBalance(data.twilioBalance || { state: 'Unavailable' });
     } catch (error) {
       if (sessionRef.current?.token !== token) return;
       if ([401, 403].includes(error.status)) logout();
+      setTwilioBalance({ state: 'Unavailable' });
       setError(error.message);
     } finally { refreshInFlight.current = false; }
   }
@@ -62,7 +66,9 @@ export default function StaffScreen() {
     } catch (error) { setError(error.message); if ([401, 403].includes(error.status)) logout(); }
     finally { setBusy(false); }
   }
-  return <main className="style-nuvei staff-screen">
+  const lowBalance = twilioBalance?.state === 'Low';
+  const balanceAmount = Number.isFinite(twilioBalance?.balance) ? `US$${twilioBalance.balance.toFixed(2)}` : '';
+  return <main className="style-nuvei staff-screen" style={lowBalance && !balanceDismissed ? { paddingBottom: 220 } : undefined}>
     <header><h1>Event staff queue</h1><p>Queued → Engraving → Ready → Collected</p></header>
     {error && <p role="alert">{error}</p>}
     {!session ? <form onSubmit={login} className="staff-login">
@@ -75,6 +81,12 @@ export default function StaffScreen() {
         <label>Show <select value={filter} onChange={event => setFilter(event.target.value)}>{['Active', 'All', 'Queued', 'Decorating', 'Ready', 'Collected'].map(value => <option key={value}>{value}</option>)}</select></label>
       </div>
       <p role="status">{lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Loading queue…'}</p>
+      {twilioBalance && <p role="status">{twilioBalance.state === 'Unavailable' ? 'Twilio balance unavailable — please check the Twilio console.' : `Twilio balance: ${balanceAmount}${lowBalance ? ' — top-up recommended' : ''}. Last checked ${new Date(twilioBalance.checkedAt).toLocaleString()}.`}</p>}
+      {lowBalance && !balanceDismissed && <aside role="status" aria-label="Twilio low balance notice" style={{ position: 'fixed', bottom: 16, left: 16, right: 16, maxWidth: 540, margin: '0 auto', padding: 16, background: '#FFF1F2', color: '#160850', border: '1px solid #FDA4AF', borderRadius: 16, boxShadow: '0 4px 20px #16085020', zIndex: 20 }}>
+        <strong>Collection SMS balance is low</strong>
+        <p style={{ margin: '8px 0' }}>Twilio has {balanceAmount} remaining (warning level: US${twilioBalance.threshold}). Please arrange a top-up to help keep collection SMS running. No automatic top-up is made.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}><a href="https://console.twilio.com/" target="_blank" rel="noopener noreferrer">Open Twilio</a><button type="button" onClick={() => setBalanceDismissed(true)}>Dismiss</button></div>
+      </aside>}
       <div>{products.map(product => <p key={product.id}>Available: {product.remaining}</p>)}</div>
       {loaded && !orders.length && <p>No orders yet.</p>}
       {loaded && orders.length > 0 && !orders.some(order => filter === 'All' || (filter === 'Active' ? order.status !== 'Collected' : order.status === filter)) && <p>No orders in this view.</p>}

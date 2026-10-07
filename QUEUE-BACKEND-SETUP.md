@@ -93,3 +93,24 @@ not a grant of access: provision and verify the Firebase user and event claim.
 Customer records are retained for future reference as instructed; no automatic
 deletion job is enabled. Final privacy wording and production font specifications
 still need review before publishing. No secrets are stored in the repository.
+
+### Twilio balance notice (prepared, not live)
+
+The staff page shows a small, dismissible, non-modal notice when the last verified
+USD balance is US$5 or less. Dismissal lasts only for the current page visit;
+reopening/reloading the staff page shows it again after sign-in if still low.
+It never tops up, sends SMS or blocks queue actions. Customers cannot view it.
+
+The separate `monitorTwilioBalance` worker checks the read-only Twilio Balance API
+hourly and caches only balance, currency and check time in a staff-only Firestore
+document. A missing, failed or two-hour-old check displays “balance unavailable”
+instead of treating the account as funded. This is not real-time monitoring or a
+guarantee that SMS will be delivered; trial restrictions and number rental still
+apply. The threshold is configurable in `integration-config.json`.
+
+Before activating, an authorised administrator must enable Blaze/billing, store
+`TWILIO_BALANCE_AUTH_TOKEN` in Secret Manager (never in chat or Git), verify it
+belongs to `TWILIO_ACCOUNT_SID`, enable `balanceMonitor.enabled`, deploy the
+scheduled worker, and verify its first check. The auth token is bound only to
+this private worker, not the browser or public queue API. Scheduler and backend
+usage may incur charges. Monitoring remains disabled until that setup is done.

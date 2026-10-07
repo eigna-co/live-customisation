@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const config = require('./event-config.json');
 const { _test: validation } = require('./redemption');
+const { balanceSummary, balancePath } = require('./twilio-balance');
 
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 const paths = { root: `events/${config.id}` };
@@ -133,10 +134,15 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
       if (request.action === 'staff-list-orders') {
         await staff(event);
         const snap = await getDb().collection(`${paths.root}/orders`).orderBy('createdAt', 'asc').limit(200).get();
+        let twilioBalance = balanceSummary(null, now());
+        try {
+          const balance = await getDb().doc(balancePath).get();
+          twilioBalance = balanceSummary(balance.exists ? balance.data() : null, now());
+        } catch { /* A balance check must not prevent staff from using the queue. */ }
         return reply(200, { orders: snap.docs.map(doc => {
           const { name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState, smsProviderStatus } = doc.data();
           return { id: doc.id, name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState: smsState || 'Not queued', smsProviderStatus: smsProviderStatus || null };
-        }), ...await availability() });
+        }), twilioBalance, ...await availability() });
       }
       if (request.action === 'staff-update-status') {
         const identity = await staff(event);

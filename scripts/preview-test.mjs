@@ -20,6 +20,11 @@ const handler = createQueueHandler({ getDb: () => db, eventConfig: previewConfig
 } });
 const publicRoot = path.resolve('dist');
 const previewArgs = Object.fromEntries(process.argv.slice(2).map(value => value.replace(/^--/, '').split('=')));
+// Explicit, local-only UI fixture; this is not the real Twilio account balance.
+if (previewArgs['balance-fixture'] === 'low') {
+  const { balancePath } = require('../firebase-functions/twilio-balance');
+  db.rows.set(balancePath, { state: 'Available', balance: 4.25, currency: 'USD', checkedAt: Date.parse('2026-10-20T02:00:00Z') });
+}
 const previewHost = previewArgs.host || '127.0.0.1';
 const previewPort = Number(previewArgs.port || 4174);
 const hostParts = previewHost.split('.').map(Number);
