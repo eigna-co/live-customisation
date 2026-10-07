@@ -21,7 +21,11 @@
   Bounded client retries completed the second simultaneous 50-order wave.
 - One approved SMS test delivered and receipt confirmed by the user.
 - Revised SMS uses “at the booth” and omits Nuvei. Live SMS remains off.
-- All 88 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- Local service-level rehearsal verifies order creation through Engraving, Ready,
+  notification acceptance and Collected with a fake SMS provider. Duplicate worker
+  calls send once; uncertain responses cannot be retried by staff. This is not a
+  deployed Firestore-trigger test. See COLLECTION-REHEARSAL.md.
+- All 92 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off
