@@ -133,8 +133,12 @@ the isolated preview with sample data only.
 5. Deploy ONLY `functions,firestore:rules` with an explicit project ID after
    approval. Functions use Singapore region. Do not deploy Firebase Hosting or
    change domains; its optional configuration is not required for this setup.
-6. Set Netlify server environment `FIREBASE_QUEUE_URL` to the deployed HTTPS
-   Firebase order endpoint. The proxy only accepts Firebase/Cloud Run hosts.
+6. The Netlify server proxy now defaults to the approved public
+   `https://redemptions-s3i7tgf25a-as.a.run.app` endpoint for `tgelive-1b68d`.
+   No provider credentials are in this setting. Optional server environment
+   `FIREBASE_QUEUE_URL` overrides it; invalid/empty overrides fail closed.
+   The proxy only accepts HTTPS Firebase/Cloud Run hosts, forwards staff tokens
+   server-to-server, and retains no-store responses and Firebase authentication.
 7. Test final-unit contention, uncertain retries, expired/unapproved staff,
    conflicting updates, offline tracking and mirror failure/reconciliation in
    staging. Verify database rules and billing alerts.

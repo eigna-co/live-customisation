@@ -2,14 +2,36 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { handler } = require('../netlify/functions/queue');
 const fs = require('node:fs');
-test('proxy rejects wrong methods, oversized bodies and unconfigured service', async () => {
+test('proxy rejects wrong methods, oversized bodies and invalid explicit configuration', async () => {
   const old = process.env.FIREBASE_QUEUE_URL;
-  delete process.env.FIREBASE_QUEUE_URL;
+  process.env.FIREBASE_QUEUE_URL = '';
   try {
     assert.equal((await handler({ httpMethod: 'GET' })).statusCode, 405);
     assert.equal((await handler({ httpMethod: 'POST', body: 'x'.repeat(10001) })).statusCode, 400);
     assert.equal((await handler({ httpMethod: 'POST', body: '{}' })).statusCode, 503);
   } finally { if (old === undefined) delete process.env.FIREBASE_QUEUE_URL; else process.env.FIREBASE_QUEUE_URL = old; }
+});
+
+test('proxy uses only the approved event backend when no environment override is set', async () => {
+  const oldUrl = process.env.FIREBASE_QUEUE_URL; const oldFetch = global.fetch;
+  delete process.env.FIREBASE_QUEUE_URL;
+  let calls = 0;
+  global.fetch = async (target, options) => {
+    calls++;
+    assert.equal(target.href, 'https://redemptions-s3i7tgf25a-as.a.run.app/');
+    assert.equal(options.redirect, 'error');
+    assert.equal(options.body, '{"action":"get-service-config"}');
+    assert.deepEqual(options.headers, { 'Content-Type': 'application/json' });
+    return { status: 200, json: async () => ({ transactional: true, staffLoginConfigured: true }) };
+  };
+  try {
+    const result = await handler({ httpMethod: 'POST', body: '{"action":"get-service-config"}' });
+    assert.equal(result.statusCode, 200);
+    assert.equal(calls, 1);
+  } finally {
+    global.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.FIREBASE_QUEUE_URL; else process.env.FIREBASE_QUEUE_URL = oldUrl;
+  }
 });
 test('proxy only contacts approved HTTPS backend hosts and passes bearer auth only', async () => {
   const oldUrl = process.env.FIREBASE_QUEUE_URL; const oldFetch = global.fetch;
