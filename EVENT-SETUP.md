@@ -12,9 +12,10 @@ Configured from supplied requirements:
   share a phone number. Phone remains required for SMS; validation accepts SG mobiles only.
 - A final review displays the engraving, font and contact details. Customers must
   acknowledge checking the name/font and no cancellation before submission.
-- No five-letter limit; surrounding whitespace is trimmed, internal spaces,
-  numbers and symbols are rejected. Letter casing is preserved. International
-  letters are accepted; any narrower character or word restrictions are pending.
+- No five-letter limit; surrounding whitespace is trimmed and casing preserved.
+  Spaces, numbers, symbols and non-Chinese text are allowed. Chinese characters
+  are rejected using the Unicode Han script property (also covers Han characters
+  used in other languages). Input is single-line printable text, not control codes.
 - Times New Roman, Segoe Print and Lucida Sans Regular.
 - Customer personalisation above the front socket only. Longer names shrink to
   fit the preview. The supplied 3.5 cm is provisionally treated as width; height

@@ -64,7 +64,7 @@ test('concurrent submissions of the same email reserve one gift only', async () 
 
 test('bad engraving and request references never reserve stock', async () => {
   const { db, call } = setup();
-  for (const payload of [{ requestId: '-'.repeat(36), redemption: details() }, { requestId: randomUUID(), redemption: { ...details(), decoration: 'Jane1' } }]) assert.equal((await call('create-redemption', payload)).httpStatus, 422);
+  for (const payload of [{ requestId: '-'.repeat(36), redemption: details() }, { requestId: randomUUID(), redemption: { ...details(), decoration: '王明' } }]) assert.equal((await call('create-redemption', payload)).httpStatus, 422);
   assert.equal(db.rows.size, 0);
 });
 test('staff access requires verified, event-authorised, non-revoked identity', async () => {
@@ -187,11 +187,11 @@ test('different emails with the same contact number are allowed; unchecked revie
 });
 test('top-only engraving accepts longer names and saves the full customer text', async () => {
   const { db, call } = setup();
-  const result = await call('create-redemption', { requestId: randomUUID(), redemption: { ...details(), decoration: 'Catherin' } });
+  const result = await call('create-redemption', { requestId: randomUUID(), redemption: { ...details(), decoration: 'Catherine' } });
   assert.equal(result.httpStatus, 201);
   const order = db.rows.get(`${paths.root}/orders/${digest('guest@example.test')}`);
   assert.equal(order.decorationBottom, undefined);
-  assert.equal(order.decoration, 'Catherin');
+  assert.equal(order.decoration, 'Catherine');
 });
 test('any submitted bottom engraving is rejected before reserving stock', async () => {
   const { db, call } = setup();

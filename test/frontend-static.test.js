@@ -11,7 +11,7 @@ test('Nuvei personalisation exposes only top text and a fixed logo below', () =>
   assert.doesNotMatch(source, /bottomPersonalisation|bottomName|DecorationBottom|label="Bottom engraving"|both areas/);
   assert.match(source, /label="Top engraving"/);
   assert.match(source, /Pre-engraved Nuvei logo/);
-  assert.match(source, /Engraving font · top personalisation/);
+  assert.match(source, /<legend[^>]*>Engraving font<\/legend>/);
 });
 
 test('customer reviews their engraving before an irreversible submission', () => {

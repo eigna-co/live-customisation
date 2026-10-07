@@ -14,6 +14,8 @@
 - One gift per normalised email; top-only engraving, fixed bottom logo.
 - Five-letter limit removed. Longer names shrink in the approximate preview;
   3.5 cm is treated as provisional width, with physical height unconfirmed.
+- Printing text now allows spaces, numbers and symbols; Chinese/Han characters
+  are blocked. The example is Catherine and guest guidance/labels are simplified.
 - Audited staff workflow; review before submission; no guest cancellation/editing.
 - Hourly Twilio balance monitor deployed; light-red warning at US$5 or below.
   No automatic top-up or credentials in source.

@@ -11,7 +11,7 @@ const details = {
 
 test('accepts longer names and preserves casing for all three selected fonts', () => {
   for (const font of product.personalisation.fonts) {
-    for (const name of ['A', 'Jane', 'Alice', 'Catherin', 'Christopher', 'Émil', '王明']) {
+    for (const name of ['A', 'Jane', 'Alice', 'Catherine', 'Christopher', 'Émil', 'A B', 'Jane1', '<svg>', '😊', "Anne-Marie", "O'Neil", 'Alex & Sam', 'カタカナ']) {
       const result = validatePersonalisation(product, name, font.id);
       assert.equal(result.decoration, name);
       assert.equal(result.font.name, font.name);
@@ -19,8 +19,8 @@ test('accepts longer names and preserves casing for all three selected fonts', (
   }
 });
 
-test('rejects blank names, symbols, numbers and unapproved fonts server-side', () => {
-  for (const decoration of ['', '   ', 'A B', 'Jane1', '<svg>', 'Jane\nTan', '😊']) {
+test('rejects blank text, Chinese characters, control codes and unapproved fonts server-side', () => {
+  for (const decoration of ['', '   ', '王明', 'Jane王', '简体', '繁體', '\u{20000}', 'Jane\nTan', 'Jane\u0000']) {
     assert.equal(_test.validateRedemption({ ...details, decoration }), null);
   }
   for (const font of ['viner-hand', 'arbitrary-css', null, undefined]) {
@@ -33,6 +33,8 @@ test('engraving width is provisional and height and letter cap are not invented'
   assert.equal(product.personalisation.widthProvisional, true);
   assert.equal(product.personalisation.engravingHeightCm, null);
   assert.equal(product.personalisation.maxLetters, undefined);
+  assert.equal(product.personalisation.lettersOnly, false);
+  assert.equal(product.personalisation.disallowHan, true);
 });
 
 test('normalises surrounding whitespace and decomposed accented letters', () => {

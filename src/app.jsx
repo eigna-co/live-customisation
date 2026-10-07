@@ -416,7 +416,7 @@ function GiftIllustration({ type, name = '', compact = false, stickerImg = null,
         ) : (
           <img src={configuredProduct.image} alt="Black Nuvei travel adaptor reference" style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }} />
         )}
-        {name && <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 }}>Product preview · Personalised top · Pre-engraved Nuvei logo below</div>}
+        {name && <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 }}>Product preview</div>}
       </div>
     );
   }
@@ -729,8 +729,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? `24px ${px}px 16px` : `40px ${px}px 16px` }}>
-        <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
-          subtitle="Your name resizes to fit the provisional 3.5 cm engraving width. The Nuvei logo is already engraved below."/>
+        <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."/>
         <div style={{
           background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
           marginBottom: 22, position: 'relative', overflow: 'hidden',
@@ -761,14 +760,14 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
           <><Field
             label="Top engraving" name="decoration" autoComplete="off" value={personalisation}
             onChange={setPersonalisation}
-            placeholder="e.g. Jane or Catherin"
-            hint="Letters only, with no five-letter limit. Longer names appear smaller. No spaces, numbers or symbols; uppercase and lowercase are preserved."
+            placeholder="e.g. Jane or Catherine"
+            hint={personalisation.length > 0 && !topValid ? 'Enter text without Chinese characters.' : 'Text resizes to fit. Chinese characters are not supported.'}
             hintError={personalisation.length > 0 && !topValid}
           />
           </>
         )}
         <fieldset style={{ border: 0, padding: 0, margin: '8px 0 16px' }}>
-          <legend style={{ fontSize: 13, marginBottom: 10 }}>Engraving font · top personalisation</legend>
+          <legend style={{ fontSize: 13, marginBottom: 10 }}>Engraving font</legend>
           {gift.personalisation.fonts.map(font => (
             <label key={font.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', fontFamily: font.css }}>
               <input type="radio" name="engraving-font" value={font.id} checked={fontId === font.id} onChange={() => setFontId(font.id)} />

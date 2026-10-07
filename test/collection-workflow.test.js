@@ -25,7 +25,7 @@ async function rehearsal({ enabled = true, uncertain = false } = {}) {
   };
   const receipt = await call('create-redemption', { requestId: randomUUID(), reviewConfirmed: true,
     redemption: { name: 'Test Guest', company: 'Example', email: 'rehearsal@example.test',
-      phone: '+6591234567', gift: 'Travel Adaptor', decoration: 'Catherin', font: 'times-new-roman' },
+      phone: '+6591234567', gift: 'Travel Adaptor', decoration: 'Catherine', font: 'times-new-roman' },
   });
   assert.equal(receipt.httpStatus, 201);
   const orderId = digest('rehearsal@example.test');
@@ -61,7 +61,7 @@ test('full queue rehearsal sends only on Ready and preserves stock, long name an
   assert.equal((await s.track()).status, 'Collected');
   assert.deepEqual(Object.keys(await s.track()).sort(), ['httpStatus', 'status', 'ticket']);
   const order = (await s.orderRef.get()).data();
-  assert.equal(order.decoration, 'Catherin');
+  assert.equal(order.decoration, 'Catherine');
   assert.equal(order.smsState, 'Accepted'); // Provider acceptance is not handset delivery.
   assert.equal(s.db.rows.get(`${paths.root}/inventory/adaptor`).reserved, 1);
   assert.equal(s.db.rows.get(`${paths.root}/inventory/adaptor-2026-10-20`).reserved, 1);
