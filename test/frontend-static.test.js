@@ -7,8 +7,33 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.jsx'), 'utf8');
 const netlifyConfig = fs.readFileSync(path.join(__dirname, '..', 'netlify.toml'), 'utf8');
 
+test('Nuvei personalisation exposes only top text and a fixed logo below', () => {
+  assert.doesNotMatch(source, /bottomPersonalisation|bottomName|DecorationBottom|label="Bottom engraving"|both areas/);
+  assert.match(source, /label="Top engraving"/);
+  assert.match(source, /Pre-engraved Nuvei logo/);
+  assert.match(source, /Engraving font · top personalisation/);
+});
+
+test('customer reviews their engraving before an irreversible submission', () => {
+  assert.match(source, /Review order →/);
+  assert.match(source, /Check before submitting/);
+  assert.match(source, /nextDisabled={!checked \|\| submitting}/);
+  assert.match(source, /reviewConfirmed: true/);
+  assert.match(source, /no cancellation is allowed after submission/);
+  assert.match(source, /One gift per email address/);
+  assert.doesNotMatch(source, /duplicate-contact|One gift per contact number/);
+});
+
 test('does not ship the old client-side staff password or panel', () => {
   assert.doesNotMatch(source, /STAFF_PASSWORD|StaffPanel|onStaffTap|type="password"/);
+});
+
+test('every pre-submission screen has bottom Back navigation and submission blocks going back', () => {
+  assert.match(source, /function StepNavigation/);
+  assert.match(source, /onClick={onBack} disabled={busy}/);
+  assert.equal((source.match(/<StepNavigation onBack={onBack}/g) || []).length, 4);
+  assert.match(source, /if \(submissionInFlight\.current \|\| ticket\) return;/);
+  assert.match(source, /onBack=\{\(\) => setReviewing\(false\)\}/);
 });
 
 test('does not put guest details into the external contact URL', () => {
@@ -32,7 +57,8 @@ test('exposes product and sticker selection state to assistive technology', () =
 
 test('shows a specific message for duplicate submission responses', () => {
   assert.match(source, /error\.status === 409/);
-  assert.match(source, /This email has already been used for a redemption\./);
+  assert.match(source, /error\.code === 'duplicate-email'/);
+  assert.match(source, /This email has already been used\./);
 });
 
 test('does not persist guest details or tickets in browser storage', () => {

@@ -1,0 +1,15 @@
+{
+  "airtable": {
+    "baseId": "appdvB1aUSC8Q0Z2T",
+    "tableId": "tblj0ReKCFJmEf9x3"
+  },
+  "balanceMonitor": {
+    "enabled": true,
+    "lowBalanceUsd": 5
+  },
+  "sms": {
+    "enabled": false,
+    "from": "+18142643662",
+    "collectionLocation": "the Nuvei booth"
+  }
+}

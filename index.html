@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Live Customisation · The Gift Expert</title>
+<title>Nuvei Live Personalisation · The Gift Expert</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ffffff'/%3E%3Ctext x='15' y='22' font-family='Arial,sans-serif' font-size='22' font-weight='900' fill='%2329b8df' text-anchor='middle'%3Eg%3C/text%3E%3Cpath d='M7 27 C10 24 13 25.5 16 27 C19 28.5 22 27.5 25 25' stroke='%2329b8df' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"/>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
   :root {
-    --display: 'Space Grotesk', system-ui, sans-serif;
-    --body: 'Inter', system-ui, sans-serif;
+    --display: 'Inter Tight', system-ui, sans-serif;
+    --body: 'Inter Tight', system-ui, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, monospace;
     --accent: #d4ff3a;
     --accent-text: var(--accent);
@@ -21,6 +21,12 @@
   }
 
   /* style presets */
+  .style-nuvei {
+    --bg: var(--brand-white, #FAF9F8); --surface: #ffffff; --surface-2: var(--brand-grey, #CFC9C2);
+    --fg: var(--brand-navy, #160850); --fg-dim: #53536b;
+    --line: rgba(22,8,80,0.15); --accent-text: var(--brand-navy, #160850);
+    --button-fg: var(--brand-navy, #160850); --error: #a32614;
+  }
   .style-neon {
     --bg: #0a0a0a; --surface: #141414; --surface-2: #1a1a1a;
     --fg: #f5f5f0; --fg-dim: #7a7a70; --line: rgba(245,245,240,0.1);
@@ -103,6 +109,17 @@
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   }
 
+  .staff-screen { position: fixed; inset: 0; overflow: auto; background: #FAF9F8; color: #160850; padding: 24px; font-family: var(--body), sans-serif; box-sizing: border-box; }
+  .staff-screen header, .staff-screen > * { max-width: 1000px; margin-left: auto; margin-right: auto; }
+  .staff-screen button { background: #0C98D3; color: #160850; border: 1px solid #160850; border-radius: 8px; padding: 12px 16px; cursor: pointer; margin: 4px; }
+  .staff-screen button:disabled { opacity: .5; cursor: wait; }
+  .staff-screen label { display: block; margin: 12px 0; }
+  .staff-screen input, .staff-screen select { display: block; padding: 12px; border: 1px solid #160850; border-radius: 6px; width: 100%; box-sizing: border-box; background: white; color: #160850; font: inherit; }
+  .staff-login { max-width: 420px; }
+  .staff-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .staff-orders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+  .staff-orders article { padding: 20px; border: 1px solid #CFC9C2; border-radius: 12px; background: white; overflow-wrap: anywhere; }
+  .staff-screen [role=alert] { padding: 12px; border: 2px solid #160850; }
   button { font-family: inherit; }
   ::-webkit-scrollbar { width: 0; height: 0; }
 </style>

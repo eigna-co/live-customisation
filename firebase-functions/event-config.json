@@ -1,0 +1,39 @@
+{
+  "id": "nuvei",
+  "name": "Nuvei Live Personalisation",
+  "brand": "Nuvei",
+  "dateLabel": "20–21 October",
+  "schedule": { "year": 2026, "month": 10, "days": [20, 21], "timeZone": "Asia/Singapore" },
+  "ticketPrefix": "NU",
+  "websiteFont": "Inter Tight",
+  "theme": {
+    "signalBlue": "#0C98D3",
+    "coreNavy": "#160850",
+    "warmWhite": "#FAF9F8",
+    "supportGrey": "#CFC9C2",
+    "source": "Nuvei ANZ Partner Brand Guidelines v.01, page 12, linked from https://www.nuvei.com/partner-marketing-kit/anz",
+    "sourceUrl": "https://www.dropbox.com/scl/fo/jptaw0ga1t3c5gilgamlv/AJl-FvZ1VipgSv0rCtJYoF4/Nuvei%20ANZ-Partner%20Brand%20Guidelines_V1.01.pdf?rlkey=s596vr4aaax6lgdb7yat8y91j&dl=0"
+  },
+  "products": [{
+    "id": "adaptor",
+    "code": "NU-001",
+    "name": "Travel Adaptor",
+    "blurb": "Black travel adaptor · laser engraving",
+    "image": "/images/nuvei-adaptor-studio.png",
+    "quantity": 100,
+    "dailyQuantity": 50,
+    "samplePlaceholder": "Jane",
+    "personalisation": {
+      "maxLetters": 5,
+      "lettersOnly": true,
+      "preserveCase": true,
+      "location": "Front, above the three-pin socket; fixed pre-engraved Nuvei logo below",
+      "areas": ["top"],
+      "fonts": [
+        {"id": "times-new-roman", "name": "Times New Roman", "css": "'Times New Roman', serif"},
+        {"id": "segoe-print", "name": "Segoe Print", "css": "'Segoe Print', cursive"},
+        {"id": "lucida-sans", "name": "Lucida Sans Regular", "css": "'Lucida Sans', 'Lucida Sans Unicode', sans-serif"}
+      ]
+    }
+  }]
+}

@@ -1,0 +1,36 @@
+{
+  "functions": [{
+    "source": "firebase-functions",
+    "codebase": "event-queue",
+    "runtime": "nodejs22",
+    "ignore": ["node_modules", ".git", "*.log", ".env*", ".secret.local"]
+  }],
+  "firestore": { "rules": "firestore.rules" },
+  "hosting": {
+    "public": "dist",
+    "predeploy": ["node scripts/build-firebase.mjs"],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {"source": "/api/redemptions", "function": {"functionId": "redemptions", "region": "asia-southeast1"}},
+      {"source": "/.netlify/functions/airtable", "function": {"functionId": "redemptions", "region": "asia-southeast1"}}
+    ],
+    "headers": [{
+      "source": "**",
+      "headers": [
+        {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://airtable.com; object-src 'none'"},
+        {"key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()"},
+        {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"},
+        {"key": "X-Content-Type-Options", "value": "nosniff"},
+        {"key": "X-Frame-Options", "value": "DENY"},
+        {"key": "Cache-Control", "value": "no-cache"}
+      ]
+    }]
+  },
+  "emulators": {
+    "functions": {"port": 5001},
+    "hosting": {"port": 5000},
+    "firestore": {"port": 8080},
+    "auth": {"port": 9099},
+    "singleProjectMode": true
+  }
+}
