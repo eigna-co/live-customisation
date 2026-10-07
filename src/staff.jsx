@@ -10,6 +10,7 @@ async function api(action, payload = {}, token) {
   return result;
 }
 const advance = { Queued: 'Decorating', Decorating: 'Ready', Ready: 'Collected' };
+const statusLabel = status => status === 'Decorating' ? 'Engraving' : status;
 export default function StaffScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -78,7 +79,7 @@ export default function StaffScreen() {
       <p>Use your approved event staff account.</p>
     </form> : <>
       <div className="staff-controls"><button onClick={() => refresh()} disabled={busy}>Refresh</button><button onClick={logout}>Sign out</button>
-        <label>Show <select value={filter} onChange={event => setFilter(event.target.value)}>{['Active', 'All', 'Queued', 'Decorating', 'Ready', 'Collected'].map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Show <select value={filter} onChange={event => setFilter(event.target.value)}>{['Active', 'All', 'Queued', 'Decorating', 'Ready', 'Collected'].map(value => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></label>
       </div>
       <p role="status">{lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Loading queue…'}</p>
       {twilioBalance && <p role="status">{twilioBalance.state === 'Unavailable' ? 'Twilio balance unavailable — please check the Twilio console.' : `Twilio balance: ${balanceAmount}${lowBalance ? ' — top-up recommended' : ''}. Last checked ${new Date(twilioBalance.checkedAt).toLocaleString()}.`}</p>}
@@ -92,7 +93,7 @@ export default function StaffScreen() {
       {loaded && orders.length > 0 && !orders.some(order => filter === 'All' || (filter === 'Active' ? order.status !== 'Collected' : order.status === filter)) && <p>No orders in this view.</p>}
       <div className="staff-orders">{orders.filter(order => filter === 'All' || (filter === 'Active' ? order.status !== 'Collected' : order.status === filter)).map(order => <article key={order.id}>
         <h2>{order.ticket}</h2><p>{order.name} · {order.gift}</p>
-        <p>Engraving: <strong>{order.decoration}</strong> · {order.font}</p><p>Status: <strong>{order.status}</strong></p>
+        <p>Engraving: <strong>{order.decoration}</strong> · {order.font}</p><p>Status: <strong>{statusLabel(order.status)}</strong></p>
         <p>Airtable: {order.mirrorState === 'Review' ? 'Needs reconciliation — do not create a second order' : order.mirrorState}</p>
         <p>Collection SMS: {order.smsState === 'Accepted' ? `Submitted to Twilio (${order.smsProviderStatus || 'delivery not confirmed'})` : order.smsState === 'Review' || order.smsState === 'Sending' ? 'Check Twilio logs before any resend' : order.smsState === 'Blocked' ? 'Not sent — SMS setup required' : order.smsState || 'Not queued'}</p>
         {order.smsState === 'Blocked' && <button disabled={busy} onClick={() => update(order, 'staff-retry-sms')}>Retry SMS after setup</button>}
