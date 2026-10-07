@@ -379,6 +379,21 @@ function ConsentRow() {
 // ─────────────────────────────────────────────────────────────
 
 function GiftIllustration({ type, name = '', compact = false, stickerImg = null, font }) {
+  const engravingText = useRef(null);
+  const [engravingSize, setEngravingSize] = useState(110);
+  useEffect(() => {
+    let active = true;
+    const fit = () => {
+      const node = engravingText.current;
+      if (!active || !node) return;
+      const measured = node.getComputedTextLength();
+      const currentSize = Number.parseFloat(getComputedStyle(node).fontSize);
+      if (measured > 0 && currentSize > 0) setEngravingSize(Math.min(110, 320 * currentSize / measured));
+    };
+    fit();
+    document.fonts?.ready.then(fit);
+    return () => { active = false; };
+  }, [name, font?.css]);
   const configuredProduct = EVENT.products.find(product => product.id === type);
   if (configuredProduct) {
     return (
@@ -386,7 +401,7 @@ function GiftIllustration({ type, name = '', compact = false, stickerImg = null,
         {name ? (
           <svg viewBox="30 100 880 1370" role="img" aria-label={`Adaptor preview: ${name} at the top, fixed pre-engraved Nuvei logo below`} style={{ width: '100%', height: '100%', maxHeight: 290 }}>
             <image href="/images/nuvei-adaptor-studio.png" x="0" y="0" width="941" height="1672" />
-            <text x="470" y="350" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: font?.css, fontSize: 70 }}>{name}</text>
+            <text ref={engravingText} x="470" y="350" textAnchor="middle" fill="#d9d9d9" style={{ fontFamily: font?.css, fontSize: engravingSize }}>{name}</text>
             <svg x="315" y="1170" width="310" height="123" viewBox="548 178 96 38" aria-label="Fixed Nuvei wordmark">
               <defs>
                 <filter id="nuvei-wordmark-grey" colorInterpolationFilters="sRGB">
@@ -703,7 +718,6 @@ function ReviewScreen({ gift, personalisation, font, data, onSubmit, onBack, sub
 
 function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, setFontId, data, onNext, onBack, submitting, submitError, mobile }) {
   const [reviewing, setReviewing] = useState(false);
-  const MAX = gift.personalisation.maxLetters;
   const selectedFont = gift.personalisation.fonts.find(font => font.id === fontId);
   const topValid = !!validatePersonalisation(gift, personalisation, fontId);
   const valid = topValid;
@@ -716,7 +730,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: mobile ? `24px ${px}px 16px` : `40px ${px}px 16px` }}>
         <StepHeader step={3} total={4} onBack={onBack} title="Make it yours."
-          subtitle={`Personalise the top with up to ${MAX} letters. The Nuvei logo is already engraved below.`}/>
+          subtitle="Your name resizes to fit the provisional 3.5 cm engraving width. The Nuvei logo is already engraved below."/>
         <div style={{
           background: 'var(--surface-2)', borderRadius: 18, aspectRatio: '5/4',
           marginBottom: 22, position: 'relative', overflow: 'hidden',
@@ -747,8 +761,8 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
           <><Field
             label="Top engraving" name="decoration" autoComplete="off" value={personalisation}
             onChange={setPersonalisation}
-            placeholder="e.g. Jane" maxLength={MAX}
-            hint={`Maximum ${MAX} letters. No spaces, numbers or symbols. Uppercase and lowercase are preserved.`}
+            placeholder="e.g. Jane or Catherin"
+            hint="Letters only, with no five-letter limit. Longer names appear smaller. No spaces, numbers or symbols; uppercase and lowercase are preserved."
             hintError={personalisation.length > 0 && !topValid}
           />
           </>
@@ -761,7 +775,7 @@ function PersonaliseScreen({ gift, personalisation, setPersonalisation, fontId, 
               {font.name}
             </label>
           ))}
-          <p style={{ fontSize: 12, color: 'var(--fg-dim)' }}>Font preview may vary by device. Final engraving follows the selected font.</p>
+          <p style={{ fontSize: 12, color: 'var(--fg-dim)' }}>Preview sizing is approximate, not a production template. Engraving height and minimum readable text size need production confirmation; very long names may be too small to engrave clearly. Fonts may vary by device.</p>
         </fieldset>
       </div>
 
@@ -1176,7 +1190,7 @@ function App() {
   const screenMap = {
     0: <WelcomeScreen
           eventName={tweaks.eventName} venue={tweaks.venue}
-          lineCopy={<>Personalise the top of your Nuvei travel adaptor with up to five letters. The Nuvei logo is already engraved below. Choose an engraving font and collect on-site with <em>The Gift Expert</em>.</>}
+          lineCopy={<>Personalise your Nuvei travel adaptor with your name, resized to fit the provisional 3.5 cm engraving width. The Nuvei logo is already engraved below. Choose a font and collect on-site with <em>The Gift Expert</em>.</>}
           onStart={() => go(1)} mobile={isPhone} />,
     1: <DetailsScreen data={data} setData={setData} onNext={() => go(2)} onBack={() => go(0)} mobile={isPhone} />,
     2: <GiftPickerScreen gifts={gifts} selected={selectedGiftId} setSelected={setSelectedGiftId}

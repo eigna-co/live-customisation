@@ -24,7 +24,9 @@
     "dailyQuantity": 50,
     "samplePlaceholder": "Jane",
     "personalisation": {
-      "maxLetters": 5,
+      "engravingWidthCm": 3.5,
+      "widthProvisional": true,
+      "engravingHeightCm": null,
       "lettersOnly": true,
       "preserveCase": true,
       "location": "Front, above the three-pin socket; fixed pre-engraved Nuvei logo below",

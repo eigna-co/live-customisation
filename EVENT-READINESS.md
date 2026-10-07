@@ -10,7 +10,9 @@
 - Staff accounts provisioned. Test account email verified and local cloud login
   tested; Siew Ping still needs email verification and her own live sign-in.
 - 50 gifts per Singapore day on 20–21 October 2026; 100 total with no rollover.
-- One gift per normalised email; top-only five-letter engraving, fixed bottom logo.
+- One gift per normalised email; top-only engraving, fixed bottom logo.
+- Five-letter limit removed. Longer names shrink in the approximate preview;
+  3.5 cm is treated as provisional width, with physical height unconfirmed.
 - Audited staff workflow; review before submission; no guest cancellation/editing.
 - Hourly Twilio balance monitor deployed; light-red warning at US$5 or below.
   No automatic top-up or credentials in source.
@@ -19,7 +21,7 @@
   Bounded client retries completed the second simultaneous 50-order wave.
 - One approved SMS test delivered and receipt confirmed by the user.
 - Revised SMS uses “at the booth” and omits Nuvei. Live SMS remains off.
-- All 87 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- All 88 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off

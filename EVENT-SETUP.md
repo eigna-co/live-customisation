@@ -12,11 +12,14 @@ Configured from supplied requirements:
   share a phone number. Phone remains required for SMS; validation accepts SG mobiles only.
 - A final review displays the engraving, font and contact details. Customers must
   acknowledge checking the name/font and no cancellation before submission.
-- One to five letters; surrounding whitespace is trimmed, internal spaces,
+- No five-letter limit; surrounding whitespace is trimmed, internal spaces,
   numbers and symbols are rejected. Letter casing is preserved. International
   letters are accepted; any narrower character or word restrictions are pending.
 - Times New Roman, Segoe Print and Lucida Sans Regular.
-- Customer personalisation above the front socket only, maximum five letters.
+- Customer personalisation above the front socket only. Longer names shrink to
+  fit the preview. The supplied 3.5 cm is provisionally treated as width; height
+  and minimum readable production size remain unconfirmed. Preview scaling is
+  optical, not a calibrated physical engraving export.
   The bottom already has a fixed pre-engraved Nuvei logo. No bottom text is accepted.
   The font selector applies only to the customer's top text.
 - Inter Tight website typography, one of the two requested website fonts.

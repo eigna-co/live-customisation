@@ -9,9 +9,9 @@ const details = {
   phone: '+6591234567', gift: product.name, font: 'times-new-roman', decoration: 'Jane',
 };
 
-test('accepts one to five letters and preserves casing for all three selected fonts', () => {
+test('accepts longer names and preserves casing for all three selected fonts', () => {
   for (const font of product.personalisation.fonts) {
-    for (const name of ['A', 'Jane', 'Alice', 'Émil', '王明']) {
+    for (const name of ['A', 'Jane', 'Alice', 'Catherin', 'Christopher', 'Émil', '王明']) {
       const result = validatePersonalisation(product, name, font.id);
       assert.equal(result.decoration, name);
       assert.equal(result.font.name, font.name);
@@ -19,13 +19,20 @@ test('accepts one to five letters and preserves casing for all three selected fo
   }
 });
 
-test('rejects overlong names, blank names, symbols, numbers and unapproved fonts server-side', () => {
-  for (const decoration of ['Robert', '', '   ', 'A B', 'Jane1', '<svg>', 'Jane\nTan', '😊']) {
+test('rejects blank names, symbols, numbers and unapproved fonts server-side', () => {
+  for (const decoration of ['', '   ', 'A B', 'Jane1', '<svg>', 'Jane\nTan', '😊']) {
     assert.equal(_test.validateRedemption({ ...details, decoration }), null);
   }
   for (const font of ['viner-hand', 'arbitrary-css', null, undefined]) {
     assert.equal(_test.validateRedemption({ ...details, font }), null);
   }
+});
+
+test('engraving width is provisional and height and letter cap are not invented', () => {
+  assert.equal(product.personalisation.engravingWidthCm, 3.5);
+  assert.equal(product.personalisation.widthProvisional, true);
+  assert.equal(product.personalisation.engravingHeightCm, null);
+  assert.equal(product.personalisation.maxLetters, undefined);
 });
 
 test('normalises surrounding whitespace and decomposed accented letters', () => {
