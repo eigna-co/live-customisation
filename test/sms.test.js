@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { fakeDb } = require('./fake-db');
 const { notifyReady, collectionMessage } = require('../firebase-functions/sms-notification');
-const config = { enabled: true, from: '+18142643662', collectionLocation: 'the Nuvei booth' };
+const config = { enabled: true, from: '+18142643662', collectionLocation: 'the booth' };
 const env = { TWILIO_ACCOUNT_SID: `AC${'1'.repeat(32)}`, TWILIO_API_KEY: `SK${'2'.repeat(32)}`, TWILIO_API_SECRET: 'fake-secret' };
 function setup(patch = {}) {
   const db = fakeDb(); const orderRef = db.doc('events/nuvei/orders/test');
@@ -23,7 +23,7 @@ function setup(patch = {}) {
 test('collection SMS is one ASCII segment with a recognisable order reference', () => {
   const body = collectionMessage({ ticket: 'NU·0123456789' }, config);
   assert.ok(body.length <= 160); assert.match(body, /^[\x20-\x7E]+$/);
-  assert.match(body, /Nuvei booth/); assert.match(body, /NU-0123456789/);
+  assert.match(body, /at the booth/); assert.doesNotMatch(body, /Nuvei/); assert.match(body, /NU-0123456789/);
 });
 test('concurrent trigger deliveries submit only one SMS and do not claim delivery', async () => {
   const s = setup(); await Promise.all([s.run(), s.run()]); await s.run();

@@ -4,6 +4,7 @@ import EVENT from '../firebase-functions/event-config.json';
 import { validatePersonalisation } from '../firebase-functions/personalisation';
 import StaffScreen from './staff';
 import { createRequestId } from './request-id';
+import { withSubmissionRetry } from './submission-retry';
 
 // ─────────────────────────────────────────────────────────────
 const TWEAK_DEFAULTS = {
@@ -1151,7 +1152,8 @@ function App() {
       };
       const fingerprint = JSON.stringify(fields);
       if (retryRequest.current?.fingerprint !== fingerprint) retryRequest.current = { fingerprint, id: createRequestId() };
-      const result = await submitToAirtable(fields, retryRequest.current.id);
+      const requestId = retryRequest.current.id;
+      const result = await withSubmissionRetry(() => submitToAirtable(fields, requestId));
       setTicket(result.ticket);
       setTrackingToken(result.trackingToken);
       refreshInventory();

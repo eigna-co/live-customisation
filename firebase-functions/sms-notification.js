@@ -4,7 +4,7 @@ const sidPattern = /^SM[0-9a-f]{32}$/i;
 function collectionMessage(order, config = settings) {
   if (!/^NU·[0-9A-F]{10}$/.test(order.ticket || '')) throw new Error('Invalid ticket');
   // Use ASCII in SMS: the displayed ticket's middle dot can cause Unicode segmentation.
-  return `Your Nuvei personalised travel adaptor is ready! Please collect it at ${config.collectionLocation} and show your order reference ${order.ticket.replace('·', '-')}.`;
+  return `Your personalised travel adaptor is ready! Please collect it at ${config.collectionLocation} and show your order reference ${order.ticket.replace('·', '-')}.`;
 }
 
 async function notifyReady({ db, orderRef, config = settings, env = process.env, fetchImpl = fetch, now = Date.now }) {

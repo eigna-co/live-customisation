@@ -126,6 +126,27 @@ test('fifty per Singapore event day, with no rollover and at most one hundred to
   assert.equal((await create('overflow2@example.test')).code, 'sold-out');
   assert.equal(db.rows.get(`${paths.root}/inventory/adaptor`).reserved, 100);
 });
+
+test('a sixty-customer concurrent wave accepts exactly fifty gifts on each event day', async () => {
+  const { db, create, setTime } = setup();
+  for (const day of [20, 21]) {
+    setTime(`2026-10-${day}T02:00:00Z`);
+    const results = await Promise.all(Array.from({ length: 60 }, (_, index) => create(`wave-${day}-${index}@example.test`)));
+    assert.equal(results.filter(result => result.httpStatus === 201).length, 50);
+    assert.equal(results.filter(result => result.code === 'sold-out').length, 10);
+    assert.equal(db.rows.get(`${paths.root}/inventory/adaptor-2026-10-${day}`).reserved, 50);
+  }
+  assert.equal(db.rows.get(`${paths.root}/inventory/adaptor`).reserved, 100);
+});
+
+test('fifty concurrent submissions for the same email consume exactly one gift', async () => {
+  const { db, create } = setup();
+  const results = await Promise.all(Array.from({ length: 50 }, () => create('wave-same@example.test')));
+  assert.equal(results.filter(result => result.httpStatus === 201).length, 1);
+  assert.equal(results.filter(result => result.code === 'duplicate-email').length, 49);
+  assert.equal(db.rows.get(`${paths.root}/inventory/adaptor`).reserved, 1);
+  assert.equal([...db.rows.keys()].filter(path => path.includes('/orders/')).length, 1);
+});
 test('unused first-day stock does not increase the second-day allocation', async () => {
   const { create, call, setTime } = setup(); await create();
   setTime('2026-10-21T02:00:00Z');

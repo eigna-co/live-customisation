@@ -1,5 +1,8 @@
 # Nuvei event launch checklist — 6 October 2026
 
+> Historical checklist. For the latest verified status and remaining launch
+> requirements, use EVENT-READINESS.md (7 October 2026).
+
 ## Confirmed
 
 - Event: 20–21 October 2026; 50 gifts per Singapore calendar day, 100 total; no rollover.

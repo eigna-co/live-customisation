@@ -12,7 +12,7 @@ test('prepared integration selects the supplied event resources without enabling
   assert.equal(settings.airtable.baseId, 'appdvB1aUSC8Q0Z2T');
   assert.equal(settings.airtable.tableId, 'tblj0ReKCFJmEf9x3');
   assert.equal(settings.sms.from, '+18142643662');
-  assert.equal(settings.sms.collectionLocation, 'the Nuvei booth');
+  assert.equal(settings.sms.collectionLocation, 'the booth');
   assert.equal(settings.sms.enabled, false);
   assert.equal(settings.sms.accountSid, undefined);
   assert.equal(event.schedule.year, 2026);
