@@ -20,7 +20,9 @@
 - Isolated real Firestore staging verified stock, duplication and retry recovery.
   Bounded client retries completed the second simultaneous 50-order wave.
 - One approved SMS test delivered and receipt confirmed by the user.
-- Revised SMS uses “at the booth” and omits Nuvei. Live SMS remains off.
+- Revised SMS uses “at the booth” and omits Nuvei. Automatic collection SMS
+  enabled and notifyCollection deployed on the user's instruction. It triggers
+  from pending Ready notifications; durable claims prevent duplicate sends.
 - Local service-level rehearsal verifies order creation through Engraving, Ready,
   notification acceptance and Collected with a fake SMS provider. Duplicate worker
   calls send once; uncertain responses cannot be retried by staff. This is not a
@@ -33,8 +35,9 @@
 1. Airtable owner adds the missing Font text field and provides write access;
    current account is read-only. Keep its old SMS automation off.
 2. Isolated Airtable create/status/reconciliation test, then deploy mirror worker.
-3. Controlled Ready → SMS worker integration test and deployment. Direct provider
-   success does not yet prove automatic trigger delivery. Do not enable live SMS early.
+3. Controlled Ready → SMS deployed-trigger test. Worker deployment and local
+   service rehearsal are complete; a real end-to-end trigger/handset test remains
+   unperformed. A new test SMS needs recipient/send approval.
 4. Production engraving dimensions, text size, matching font files and allowed
    characters. Browser font fallbacks are not final production artwork.
 5. Owning Netlify team checks current plan and remaining usage; current login cannot

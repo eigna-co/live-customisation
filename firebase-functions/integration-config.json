@@ -8,7 +8,7 @@
     "lowBalanceUsd": 5
   },
   "sms": {
-    "enabled": false,
+    "enabled": true,
     "from": "+18142643662",
     "collectionLocation": "the booth"
   }

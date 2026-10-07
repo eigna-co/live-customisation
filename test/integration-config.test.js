@@ -6,14 +6,14 @@ const root = path.join(__dirname, '..');
 const settings = require('../firebase-functions/integration-config.json');
 const event = require('../firebase-functions/event-config.json');
 
-test('prepared integration selects the supplied event resources without enabling live SMS', () => {
+test('approved automatic SMS selects the supplied event resources and booth wording', () => {
   const project = JSON.parse(fs.readFileSync(path.join(root, '.firebaserc'), 'utf8'));
   assert.equal(project.projects.default, 'tgelive-1b68d');
   assert.equal(settings.airtable.baseId, 'appdvB1aUSC8Q0Z2T');
   assert.equal(settings.airtable.tableId, 'tblj0ReKCFJmEf9x3');
   assert.equal(settings.sms.from, '+18142643662');
   assert.equal(settings.sms.collectionLocation, 'the booth');
-  assert.equal(settings.sms.enabled, false);
+  assert.equal(settings.sms.enabled, true);
   assert.equal(settings.sms.accountSid, undefined);
   assert.equal(event.schedule.year, 2026);
   assert.deepEqual(event.schedule.days, [20, 21]);

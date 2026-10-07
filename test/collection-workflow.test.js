@@ -67,8 +67,7 @@ test('full queue rehearsal sends only on Ready and preserves stock, long name an
   assert.equal(s.db.rows.get(`${paths.root}/inventory/adaptor-2026-10-20`).reserved, 1);
 });
 
-test('disabled live SMS cannot send, and collection still works', async () => {
-  assert.equal(liveSms.enabled, false);
+test('disabled SMS configuration cannot send, and collection still works', async () => {
   const s = await rehearsal({ enabled: false });
   await s.advance('Decorating', 0); await s.advance('Ready', 1);
   await s.runWorker();

@@ -29,11 +29,13 @@ This does not exercise deployed Node 22 HTTP writes, Eventarc delivery, runtime
 secret permissions, real Twilio submission or handset delivery. The earlier
 approved direct SMS reached the handset, but does not prove automatic triggering.
 
-The production notification worker remains undeployed and SMS disabled.
-Before enabling it, verify the runtime's three existing Twilio secret bindings
-and rehearse the deployed trigger with an isolated test order. A new real test
-SMS needs explicit recipient/send approval. Do not create test records in the
-live event or silently grant additional service-account secret access.
+Following the user's request to make collection SMS automatic, notifyCollection
+was deployed and SMS enabled. Firebase bound the three existing Twilio secrets
+to the worker runtime. The database trigger watches only events/nuvei/orders.
+No live orders were created or real test messages sent during this deployment.
+Rehearse the deployed trigger and handset delivery separately: a new real test
+SMS needs explicit recipient/send approval. Do not create fake gift orders in
+the live event or grant unrelated secret access.
 
 Airtable remains a separate blocker: the owner needs to add Font and provide
 write access before its mirror worker can be enabled. Production also needs to
