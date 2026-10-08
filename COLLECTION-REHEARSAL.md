@@ -92,3 +92,25 @@ This is an integrated rehearsal, not a deployed customer/staff UI test. It does
 not exercise cloud trigger delivery or actual staff login. SMS delivery and the
 isolated deployed notification trigger passed separately earlier; those checks
 do not replace the final staff sign-in/production-path sign-off.
+
+## Isolated deployed Airtable trigger — 8 October
+
+A temporary Node 22 asia-southeast1 Firestore trigger used the same syncOrder
+handler, default-app database initialization and AIRTABLE_TOKEN secret as the
+production worker. Its path was restricted to the existing isolated rehearsal
+event, with additional guards for the labelled test name/reference and existing
+Airtable record ID. It did not have SMS secrets or watch the live event.
+
+One preconditioned write marked the existing test order Pending and recorded
+triggerTestRequestedAt. Actual cloud event delivery ran the handler, updating
+mirrorStartedAt after that request and returning the order to Synced. A separate
+read-only Airtable check verified reference NU·5265A58B3B, Collected status and
+Segoe Print, with no phone number. No direct mirror invocation was used to finish
+this test, no real SMS was sent, and live gift stock was untouched.
+
+`scripts/check-airtable-trigger.cjs --check-only` inspects the retained result.
+The one-shot wake mode refuses a second request. Temporary trigger source was
+removed after the pass. Firebase confirmed successful deletion; the four
+production workers remain ACTIVE and no temporary test worker remains.
+This proves isolated deployed Airtable event delivery, not staff sign-in or the
+complete live event HTTP/customer UI path.

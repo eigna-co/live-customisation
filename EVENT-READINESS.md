@@ -58,6 +58,11 @@
   idempotency and three audit entries. Exactly one simulated SMS, no real SMS or
   live inventory changes. Staff identity simulated as explicitly requested.
   See COLLECTION-REHEARSAL.md for test references and remaining scope.
+- Actual deployed Airtable event delivery passed on the existing isolated test
+  order: Pending → Processing → Synced, with read-only Airtable status/font
+  verification. No real SMS or live inventory changes. Temporary trigger source
+  removed after the pass; cloud deletion verified. Only the four ACTIVE production
+  workers remain. Test records were retained, not deleted.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off
