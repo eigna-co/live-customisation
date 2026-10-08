@@ -27,7 +27,8 @@ async function syncOrder({ db, orderRef, fetchImpl = fetch, env = process.env })
       recordId = found.records[0]?.id;
       if (!recordId && order.mirrorCreateAttempted) { await orderRef.update({ mirrorState: 'Review' }); return; }
     }
-    const fields = { Name: order.name, Company: order.company, Email: order.email, Phone: order.phone, Gift: order.gift, Decoration: order.decoration, Font: order.font, Ticket: order.ticket, Status: order.status };
+    const airtableStatus = order.status === 'Decorating' ? 'Engraving' : order.status;
+    const fields = { Name: order.name, Company: order.company, Email: order.email, Phone: order.phone, Gift: order.gift, Decoration: order.decoration, Font: order.font, Ticket: order.ticket, Status: airtableStatus };
     if (!recordId) {
       // A timed-out POST may have succeeded remotely. Never blindly repeat it.
       await orderRef.update({ mirrorCreateAttempted: true });
@@ -36,7 +37,7 @@ async function syncOrder({ db, orderRef, fetchImpl = fetch, env = process.env })
       if (typeof created.id !== 'string') throw new Error('Missing record reference');
       recordId = created.id;
     } else {
-      await request(`${url}/${encodeURIComponent(recordId)}`, { method: 'PATCH', body: JSON.stringify({ fields: { Status: order.status } }) });
+      await request(`${url}/${encodeURIComponent(recordId)}`, { method: 'PATCH', body: JSON.stringify({ fields: { Status: airtableStatus } }) });
     }
     await db.runTransaction(async tx => {
       const current = await tx.get(orderRef);

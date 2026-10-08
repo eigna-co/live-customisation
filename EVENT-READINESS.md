@@ -39,15 +39,27 @@
   labels with useful instructions. Closed event is no longer labelled sold out.
   Browser walkthrough used the isolated trial only; no real SMS or orders.
 - Welcome heading keeps its original styling; full stops removed as requested.
-- All 100 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- All 101 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- Airtable Font field is present and all nine required fields passed preflight.
+  Saved one labelled non-customer test record with no phone number or stock use;
+  create and Engraving update succeeded using the existing saved token.
+- Airtable Status choices now include Engraving and Collected alongside Queued
+  and Ready. The mirror maps internal Decorating to the visible Engraving label.
+  Existing records were not changed. Legacy Airtable SMS automation remains off.
+- Latest approved frontend build is confirmed live by matching its bundle hash.
+- Shared mirror handler verified Queued, Engraving, Ready and Collected against
+  the same labelled Airtable test record; no SMS, real orders or inventory changes.
+- Firebase reports mirrorOrders created successfully in asia-southeast1.
+  CLI ended with an artifact-image cleanup-policy warning, not a deployment failure.
+- Deployed mirrorOrders, redemptions, notifyCollection and monitorTwilioBalance
+  are all confirmed ACTIVE in asia-southeast1.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off
 
-1. Airtable owner adds the missing Font text field and provides write access;
-   current account is read-only. Font is still missing on the 8 October read-only
-   API check; no customer records were returned. Keep its old SMS automation off.
-2. Isolated Airtable create/status/reconciliation test, then deploy mirror worker.
+1. Staff onboarding: Siew Ping's approved account remains absent on the latest check.
+2. Labelled test record TEST-AIRTABLE-20261008 is retained, not a gift order.
+   It must not be included in production gift totals; no customer record deletion.
 3. Final production-path rehearsal after staff onboarding/Airtable setup. The
    isolated deployed trigger/shared SMS handler has passed; a customer submission
    through live HTTP and staff Ready action has not been exercised end-to-end.
@@ -58,5 +70,7 @@
 6. Final customer privacy/retention/SMS wording and approved staff live login.
 7. Full isolated staging rehearsal, including deployed Node 22/HTTP writes and
    triggers. Existing real database test used a local REST adapter, not that path.
+8. Configure a suitable deployment-image cleanup policy with the project owner;
+   current warning means old images may accumulate and incur storage charges.
 
 Optional later: live.thegiftexpert.com needs DNS access, not a launch dependency.

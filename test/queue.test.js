@@ -208,6 +208,24 @@ test('duplicate mirror deliveries create only one Airtable copy', async () => {
   await Promise.all([syncOrder({ db, orderRef, fetchImpl, env: mirrorEnv }), syncOrder({ db, orderRef, fetchImpl, env: mirrorEnv })]);
   assert.equal(posts, 1); assert.equal(db.rows.get(orderRef.path).mirrorState, 'Synced');
 });
+test('Airtable creation and updates use Engraving for the internal Decorating status', async () => {
+  const { db, create } = setup(); await create();
+  const orderRef = db.doc(`${paths.root}/orders/${digest('guest@example.test')}`);
+  await orderRef.update({ status: 'Decorating' });
+  const sent = [];
+  const fetchImpl = async (url, options) => {
+    if (options.body) sent.push({ method: options.method, fields: JSON.parse(options.body).fields });
+    return { ok: true, json: async () => options.method === 'POST' ? { id: 'rec-test' } : { records: [] } };
+  };
+  await syncOrder({ db, orderRef, fetchImpl, env: mirrorEnv });
+  await orderRef.update({ mirrorState: 'Pending', version: 1 });
+  await syncOrder({ db, orderRef, fetchImpl, env: mirrorEnv });
+  assert.equal(sent[0].fields.Status, 'Engraving');
+  assert.equal(sent[1].method, 'PATCH');
+  assert.deepEqual(sent[1].fields, { Status: 'Engraving' });
+  assert.equal(db.rows.get(orderRef.path).status, 'Decorating');
+});
+
 test('uncertain Airtable writes enter review and recheck without posting twice', async () => {
   const { db, call, create } = setup(); await create();
   const orderRef = db.doc(`${paths.root}/orders/${digest('guest@example.test')}`);
