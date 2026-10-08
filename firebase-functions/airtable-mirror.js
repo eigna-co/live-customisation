@@ -28,7 +28,7 @@ async function syncOrder({ db, orderRef, fetchImpl = fetch, env = process.env })
       if (!recordId && order.mirrorCreateAttempted) { await orderRef.update({ mirrorState: 'Review' }); return; }
     }
     const airtableStatus = order.status === 'Decorating' ? 'Engraving' : order.status;
-    const fields = { Name: order.name, Company: order.company, Email: order.email, Phone: order.phone, Gift: order.gift, Decoration: order.decoration, Font: order.font, Ticket: order.ticket, Status: airtableStatus };
+    const fields = { Name: order.isTest ? `${order.name} — TEST - NOT A GIFT ORDER` : order.name, Company: order.company, Email: order.email, Phone: order.phone, Gift: order.gift, Decoration: order.decoration, Font: order.font, Ticket: order.ticket, Status: airtableStatus };
     if (!recordId) {
       // A timed-out POST may have succeeded remotely. Never blindly repeat it.
       await orderRef.update({ mirrorCreateAttempted: true });

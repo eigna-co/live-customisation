@@ -27,6 +27,21 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
     if (!Number.isSafeInteger(value.capacity) || value.capacity < 0 || !Number.isSafeInteger(value.reserved) || value.reserved < 0) fail(503, 'Stock is unavailable. Please contact the event team.');
     return value;
   }
+  function orderWindow(at) {
+    const day = eventDay(at);
+    if (day) return { day, isTest: false };
+    const trial = eventConfig.trial;
+    const start = Date.parse(trial?.startsAt), end = Date.parse(trial?.expiresAt);
+    if (trial?.enabled !== true || !/^[a-z0-9-]{1,64}$/.test(trial.id || '') ||
+        !Number.isSafeInteger(trial.capacity) || trial.capacity < 1 || trial.capacity > 50 ||
+        !Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > 7 * 86400000 || at < start || at >= end) return null;
+    return { day: `trial-${trial.id}`, isTest: true, trialId: trial.id, capacity: trial.capacity };
+  }
+  function stockPlan(product, window) {
+    return { key: window.isTest ? `${window.day}-${product.id}` : product.id,
+      total: window.isTest ? window.capacity : product.quantity,
+      daily: window.isTest ? window.capacity : product.dailyQuantity };
+  }
   async function staff(event) {
     const token = event.headers?.authorization?.match(/^Bearer (\S+)$/i)?.[1];
     if (!token) fail(401, 'Please sign in.');
@@ -45,30 +60,33 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
     const product = eventConfig.products.find(product => product.name.toLowerCase() === details.gift);
     const fingerprint = digest(JSON.stringify(details));
     const db = getDb();
-    const orderId = digest(details.email);
-    const orderRef = db.doc(`${paths.root}/orders/${orderId}`);
+    const at = now();
+    const window = orderWindow(at);
+    const orderId = digest(window?.isTest ? `${window.trialId}:${details.email}` : details.email);
     const requestRef = db.doc(`${paths.root}/requests/${request.requestId}`);
     // Generate these once, outside the callback: Firestore may retry transactions.
     const ticket = `${config.ticketPrefix}·${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
     const trackingToken = crypto.randomBytes(32).toString('hex');
     return db.runTransaction(async tx => {
-      const [savedRequest, existing] = await Promise.all([tx.get(requestRef), tx.get(orderRef)]);
+      const savedRequest = await tx.get(requestRef);
+      const orderRef = db.doc(`${paths.root}/orders/${savedRequest.exists ? savedRequest.data().orderId : orderId}`);
+      const existing = await tx.get(orderRef);
       if (savedRequest.exists) {
-        if (savedRequest.data().fingerprint !== fingerprint || savedRequest.data().orderId !== orderId) fail(409, 'This request reference was already used for different details.', 'request-conflict');
+        if (savedRequest.data().fingerprint !== fingerprint) fail(409, 'This request reference was already used for different details.', 'request-conflict');
         if (!existing.exists) fail(503, 'Please contact the event team with your reference.');
         return { ...receipt(existing.data()), replayed: true };
       }
       if (existing.exists) fail(409, 'This email has already claimed a gift for this event.', 'duplicate-email');
-      const at = now();
-      const day = eventDay(at);
-      if (!day) fail(409, 'Orders are only accepted on the event dates.', 'event-closed');
-      const stockRef = db.doc(`${paths.root}/inventory/${product.id}`);
-      const dailyRef = db.doc(`${paths.root}/inventory/${product.id}-${day}`);
+      if (!window) fail(409, 'Orders are only accepted on the event dates.', 'event-closed');
+      const day = window.day;
+      const plan = stockPlan(product, window);
+      const stockRef = db.doc(`${paths.root}/inventory/${plan.key}`);
+      const dailyRef = db.doc(`${paths.root}/inventory/${plan.key}-${day}`);
       const [stock, dailyStock] = await Promise.all([tx.get(stockRef), tx.get(dailyRef)]);
-      const inventory = inventoryData(stock, product.quantity);
-      const daily = inventoryData(dailyStock, product.dailyQuantity);
-      if (inventory.reserved >= Math.min(inventory.capacity, product.quantity) || daily.reserved >= Math.min(daily.capacity, product.dailyQuantity)) fail(409, 'Today’s allocation is sold out.', 'sold-out');
-      const order = { ...details, eventDay: day, reviewConfirmedAt: at, productId: product.id, ticket, trackingToken, status: 'Queued', createdAt: at, updatedAt: at, version: 0, mirrorState: 'Pending' };
+      const inventory = inventoryData(stock, plan.total);
+      const daily = inventoryData(dailyStock, plan.daily);
+      if (inventory.reserved >= Math.min(inventory.capacity, plan.total) || daily.reserved >= Math.min(daily.capacity, plan.daily)) fail(409, 'Today’s allocation is sold out.', 'sold-out');
+      const order = { ...details, eventDay: day, ...(window.isTest ? { isTest: true, trialId: window.trialId } : {}), reviewConfirmedAt: at, productId: product.id, ticket, trackingToken, status: 'Queued', createdAt: at, updatedAt: at, version: 0, mirrorState: 'Pending' };
       tx.create(orderRef, order);
       tx.create(requestRef, { orderId, fingerprint });
       tx.create(db.doc(`${paths.root}/tracking/${digest(trackingToken)}`), { orderId });
@@ -80,14 +98,16 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
 
   async function availability() {
     const db = getDb();
-    const day = eventDay(now());
+    const window = orderWindow(now());
+    const day = window?.day || null;
     const products = await Promise.all(eventConfig.products.map(async product => {
       if (!day) return { id: product.id, remaining: 0 };
-      const snap = await db.doc(`${paths.root}/inventory/${product.id}`).get();
-      const dailySnap = await db.doc(`${paths.root}/inventory/${product.id}-${day}`).get();
-      const data = inventoryData(snap, product.quantity);
-      const daily = inventoryData(dailySnap, product.dailyQuantity);
-      return { id: product.id, remaining: Math.max(0, Math.min(Math.min(data.capacity, product.quantity) - data.reserved, Math.min(daily.capacity, product.dailyQuantity) - daily.reserved)) };
+      const plan = stockPlan(product, window);
+      const snap = await db.doc(`${paths.root}/inventory/${plan.key}`).get();
+      const dailySnap = await db.doc(`${paths.root}/inventory/${plan.key}-${day}`).get();
+      const data = inventoryData(snap, plan.total);
+      const daily = inventoryData(dailySnap, plan.daily);
+      return { id: product.id, remaining: Math.max(0, Math.min(Math.min(data.capacity, plan.total) - data.reserved, Math.min(daily.capacity, plan.daily) - daily.reserved)) };
     }));
     return { products, eventDay: day, eventClosed: !day };
   }
@@ -151,8 +171,8 @@ function createQueueHandler({ getDb, verifyToken, webApiKey = () => '', authFetc
           twilioBalance = balanceSummary(balance.exists ? balance.data() : null, now());
         } catch { /* A balance check must not prevent staff from using the queue. */ }
         return reply(200, { orders: snap.docs.map(doc => {
-          const { name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState, smsProviderStatus } = doc.data();
-          return { id: doc.id, name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState: smsState || 'Not queued', smsProviderStatus: smsProviderStatus || null };
+          const { name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, smsState, smsProviderStatus, isTest } = doc.data();
+          return { id: doc.id, name, gift, decoration, font, ticket, status, version, createdAt, mirrorState, isTest: isTest === true, smsState: smsState || 'Not queued', smsProviderStatus: smsProviderStatus || null };
         }), twilioBalance, ...await availability() });
       }
       if (request.action === 'staff-update-status') {

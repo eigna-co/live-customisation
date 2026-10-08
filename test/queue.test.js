@@ -103,6 +103,55 @@ test('staff changes are ordered, conflict-checked and audited; tracking exposes 
   assert.equal((await call('get-order-status', { trackingToken: receipt.ticket })).httpStatus, 404);
 });
 const mirrorEnv = { AIRTABLE_TOKEN: 'test', AIRTABLE_BASE: 'base', AIRTABLE_TABLE: 'table' };
+test('temporary customer trial saves normal orders without touching event stock or email entitlement', async () => {
+  const { db, create, call, setTime } = setup({ at: Date.parse('2026-10-08T04:00:00Z') });
+  assert.equal((await call('get-availability')).eventClosed, false);
+  const trial = await create('boss@example.test');
+  assert.equal(trial.httpStatus, 201);
+  const id = digest('boss-20261008:boss@example.test');
+  assert.equal(db.rows.get(`${paths.root}/orders/${id}`).isTest, true);
+  assert.equal(db.rows.has(`${paths.root}/inventory/adaptor`), false);
+  assert.equal(db.rows.has(`${paths.root}/inventory/adaptor-2026-10-20`), false);
+  assert.equal((await create('BOSS@EXAMPLE.TEST')).code, 'duplicate-email');
+  assert.equal((await call('staff-list-orders', {}, 'allowed')).orders[0].isTest, true);
+  for (const [status, version] of [['Decorating', 0], ['Ready', 1], ['Collected', 2]]) {
+    assert.equal((await call('staff-update-status', { orderId: id, status, version }, 'allowed')).httpStatus, 200);
+  }
+  assert.equal(db.rows.get(`${paths.root}/orders/${id}`).smsState, 'Pending');
+  setTime('2026-10-20T02:00:00Z');
+  assert.equal((await create('boss@example.test')).httpStatus, 201);
+  assert.equal(db.rows.get(`${paths.root}/inventory/adaptor`).reserved, 1);
+});
+
+test('temporary trial expires automatically and replay after expiry does not reserve another unit', async () => {
+  const { db, call, create, setTime } = setup({ at: Date.parse('2026-10-08T04:00:00Z') });
+  const payload = { requestId: randomUUID(), redemption: details() };
+  const first = await call('create-redemption', payload);
+  setTime('2026-10-09T04:00:00Z');
+  assert.equal((await call('get-availability')).eventClosed, true);
+  assert.equal((await create('other@example.test')).code, 'event-closed');
+  assert.equal((await call('create-redemption', payload)).ticket, first.ticket);
+  assert.equal(db.rows.get(`${paths.root}/inventory/trial-boss-20261008-adaptor`).reserved, 1);
+});
+
+test('disabled or malformed temporary trial fails closed', async () => {
+  for (const patch of [{ enabled: false }, { expiresAt: 'invalid' }, { capacity: 1000 }, { id: '../unsafe' }]) {
+    const { create, db } = setup({ at: Date.parse('2026-10-08T04:00:00Z'), configOverride: { ...eventConfig, trial: { ...eventConfig.trial, ...patch } } });
+    assert.equal((await create()).code, 'event-closed');
+    assert.equal(db.rows.size, 0);
+  }
+});
+
+test('temporary trial mirrors into the existing Airtable test-only filter', async () => {
+  const { db, create } = setup({ at: Date.parse('2026-10-08T04:00:00Z') });
+  await create('boss@example.test');
+  let saved;
+  await syncOrder({ db, orderRef: db.doc(`${paths.root}/orders/${digest('boss-20261008:boss@example.test')}`), env: mirrorEnv,
+    fetchImpl: async (url, options) => ({ ok: true, json: async () => options.method === 'POST' ? (saved = JSON.parse(options.body).fields, { id: 'rec-trial' }) : { records: [] } }) });
+  assert.equal(saved.Name, 'Jane Tan — TEST - NOT A GIFT ORDER');
+  assert.equal(saved.Decoration, 'Jane');
+  assert.equal(saved.Font, 'Segoe Print');
+});
 test('only authorised staff can requeue an SMS that has never been attempted', async () => {
   const { db, create, call } = setup(); await create();
   const id = digest('guest@example.test'); const ref = db.doc(`${paths.root}/orders/${id}`);

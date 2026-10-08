@@ -94,6 +94,7 @@ export default function StaffScreen() {
       {loaded && orders.length > 0 && !orders.some(order => filter === 'All' || (filter === 'Active' ? order.status !== 'Collected' : order.status === filter)) && <p>No orders in this view.</p>}
       <div className="staff-orders">{orders.filter(order => filter === 'All' || (filter === 'Active' ? order.status !== 'Collected' : order.status === filter)).map(order => <article key={order.id}>
         <h2>{order.ticket}</h2><p>{order.name} · {order.gift}</p>
+        {order.isTest && <p><strong>Test order — not event stock</strong></p>}
         <p>Engraving: <strong>{order.decoration}</strong> · {order.font}</p><p>Status: <strong>{statusLabel(order.status)}</strong></p>
         <p>Airtable: {mirrorLabel(order.mirrorState)}</p>
         <p>Collection SMS: {smsLabel(order)}</p>
