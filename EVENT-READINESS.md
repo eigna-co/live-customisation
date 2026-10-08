@@ -39,7 +39,7 @@
   labels with useful instructions. Closed event is no longer labelled sold out.
   Browser walkthrough used the isolated trial only; no real SMS or orders.
 - Welcome heading keeps its original styling; full stops removed as requested.
-- All 101 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
+- All 105 tests and both builds pass. See LOAD-TEST-RESULTS.md for scope/limitations.
 - Airtable Font field is present and all nine required fields passed preflight.
   Saved one labelled non-customer test record with no phone number or stock use;
   create and Engraving update succeeded using the existing saved token.
@@ -76,6 +76,12 @@
   Non-test rows include older records and must not be counted as current stock.
 - Read-only cost review: billing enabled, no artifact cleanup policy. Budget
   access returned 403, so alert configuration remains unverified. See event-kit.
+- Approved temporary normal customer testing is enabled through Sunday,
+  11 October Singapore time. Test orders have separate email entitlement and
+  capacity, staff/Airtable markers, normal tracking and real Ready-triggered SMS.
+  No special customer link or trial labels. See event-kit/BOSS-TEST.md.
+- Live normal form → selectable adaptor → engraving/font → review verified
+  without submitting another order. Published frontend bundle matches the build.
 
 ## Still required before event sign-off
 
