@@ -53,6 +53,11 @@
   CLI ended with an artifact-image cleanup-policy warning, not a deployment failure.
 - Deployed mirrorOrders, redemptions, notifyCollection and monitorTwilioBalance
   are all confirmed ACTIVE in asia-southeast1.
+- Integrated rehearsal passed via local HTTP, isolated real Firestore and real
+  Airtable: all statuses, Catherine/Segoe Print, tracking, duplicate email rejection,
+  idempotency and three audit entries. Exactly one simulated SMS, no real SMS or
+  live inventory changes. Staff identity simulated as explicitly requested.
+  See COLLECTION-REHEARSAL.md for test references and remaining scope.
 - Customer records retained as instructed; no automatic data deletion.
 
 ## Still required before event sign-off

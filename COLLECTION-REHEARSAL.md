@@ -8,7 +8,7 @@ It uses synthetic customer details and a simulated event date.
 
 Verified:
 
-- Full name `Catherin` is saved without truncation.
+- Full name `Catherine` is saved without truncation.
 - Order received → Engraving → Ready → Collected, with guest status updates.
 - No SMS request at Order received or Engraving.
 - Ready creates a pending notification. Concurrent worker calls make one
@@ -21,7 +21,7 @@ Verified:
 - An unauthenticated status update cannot schedule a notification.
 
 Run all release checks with `node scripts/verify-release.mjs`.
-Result: 95 tests and both production builds pass.
+Result: 101 tests and both production builds pass.
 
 ## Not proved by this rehearsal
 
@@ -61,6 +61,34 @@ Never rerun a sending mode for this completed attempt.
 The production trigger's actual live event path and staff UI still need the final
 joint rehearsal; the test used an isolated diagnostic path deliberately.
 
-Airtable remains a separate blocker: the owner needs to add Font and provide
-write access before its mirror worker can be enabled. Production also needs to
-confirm physical height, minimum readable text and matching font files.
+Airtable's Font field and write access are now verified. The mirror worker is
+deployed and ACTIVE, mapping internal Decorating to Airtable's Engraving option.
+Production still needs to confirm physical height and matching font files.
+
+## Integrated isolated rehearsal — 8 October, after Airtable setup
+
+`scripts/rehearse-collection.cjs` passed using local HTTP through the shared
+Firebase HTTP adapter and queue handler, real isolated Firestore REST transactions,
+and the shared mirror handler writing a labelled Airtable test record.
+
+- Isolated event: `events/nuvei-rehearsal-1791427527019-cc12594a`.
+- Test reference: `NU·5265A58B3B`; name clearly marks it NOT A GIFT ORDER.
+- Queued → Engraving → Ready → Collected persisted correctly in Airtable.
+- Catherine and Segoe Print persisted correctly; customer tracking followed status.
+- Replaying the identical submission did not reserve another gift. A second
+  request from the same email was rejected. Isolated daily stock moved 50 → 49.
+- Three status audit entries persisted; unauthenticated status changes rejected.
+- Concurrent notification-handler calls submitted exactly one simulated SMS.
+  No real Twilio request, phone number in Airtable, or live inventory changes.
+- Staff identity was simulated, as staff account sign-in was explicitly skipped.
+- Staging Firestore and Airtable test records are retained. Do not count the
+  labelled test record toward production gifts; no deletion was performed.
+
+The first initialization attempts stopped before any data write because the local
+Admin Firestore client rejected the custom CLI credential. Using the previously
+verified REST transaction adapter resolved it; no production code change needed.
+
+This is an integrated rehearsal, not a deployed customer/staff UI test. It does
+not exercise cloud trigger delivery or actual staff login. SMS delivery and the
+isolated deployed notification trigger passed separately earlier; those checks
+do not replace the final staff sign-in/production-path sign-off.
