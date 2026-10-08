@@ -8,8 +8,8 @@
 - Blaze billing approved, Singapore Firestore with deny-all client rules, core
   backend and event-only staff authentication deployed.
 - Test staff account verified, enabled and has the Nuvei role (rechecked 8 October).
-  Siew Ping's supplied email currently returns user-not-found in Firebase; she
-  needs an account, verification, event role and her own live sign-in.
+  Siew Ping's approved account is now enabled, email-verified and has the Nuvei
+  staff role. Her own successful live queue sign-in still needs confirmation.
 - 50 gifts per Singapore day on 20–21 October 2026; 100 total with no rollover.
 - One gift per normalised email; top-only engraving, fixed bottom logo.
 - Five-letter limit removed. Longer names shrink in the approximate preview;
@@ -64,12 +64,24 @@
   removed after the pass; cloud deletion verified. Only the four ACTIVE production
   workers remain. Test records were retained, not deleted.
 - Customer records retained as instructed; no automatic data deletion.
+- Live welcome, customer details and product selection, plus the public staff
+  sign-in page, checked in a 390px portrait viewport with no horizontal overflow.
+  Live engraving/review and the authenticated mobile queue remain unverified:
+  orders are closed before event dates and staff sign-in needs a fresh session.
+- Customer QR PNG/SVG, printable HTML and staff guide prepared in event-kit.
+  QR payload matches the live customer URL; physical phone scan before printing
+  remains a handover check.
+- Airtable Test records view shows the two labelled rehearsal rows; Orders -
+  excluding tests excludes them. Original Grid view and records are unchanged.
+  Non-test rows include older records and must not be counted as current stock.
+- Read-only cost review: billing enabled, no artifact cleanup policy. Budget
+  access returned 403, so alert configuration remains unverified. See event-kit.
 
 ## Still required before event sign-off
 
-1. Staff onboarding: Siew Ping's approved account remains absent on the latest check.
-2. Labelled test record TEST-AIRTABLE-20261008 is retained, not a gift order.
-   It must not be included in production gift totals; no customer record deletion.
+1. Confirm Siew Ping can open the live queue with her approved staff account.
+2. Use the non-test Airtable view for operational review. Retain labelled tests
+   without counting them as gift orders; no customer record deletion.
 3. Final production-path rehearsal after staff onboarding/Airtable setup. The
    isolated deployed trigger/shared SMS handler has passed; a customer submission
    through live HTTP and staff Ready action has not been exercised end-to-end.
