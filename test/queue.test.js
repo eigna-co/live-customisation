@@ -127,7 +127,7 @@ test('temporary trial expires automatically and replay after expiry does not res
   const { db, call, create, setTime } = setup({ at: Date.parse('2026-10-08T04:00:00Z') });
   const payload = { requestId: randomUUID(), redemption: details() };
   const first = await call('create-redemption', payload);
-  setTime('2026-10-09T04:00:00Z');
+  setTime('2026-10-11T16:00:00Z');
   assert.equal((await call('get-availability')).eventClosed, true);
   assert.equal((await create('other@example.test')).code, 'event-closed');
   assert.equal((await call('create-redemption', payload)).ticket, first.ticket);

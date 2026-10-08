@@ -1,7 +1,8 @@
 # Temporary customer test — 8 October 2026
 
 The normal customer website accepts orders for this approved test window, until
-9 October 2026 at 12 noon Singapore time. No special link or customer trial label.
+the end of Sunday, 11 October 2026 Singapore time (closes at midnight on Monday).
+No special link or customer trial label.
 
 The review, submission, tracking, staff status workflow, Airtable mirror and
 collection SMS all use the deployed production handlers. Marking Ready sends a
